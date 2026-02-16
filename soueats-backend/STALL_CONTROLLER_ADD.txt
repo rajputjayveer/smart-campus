@@ -1,0 +1,25 @@
+// Add to stallController.js - Get available stalls for shopkeeper registration
+
+// @desc    Get available stalls (without active shopkeeper)
+// @route   GET /api/stalls/available
+// @access  Public
+exports.getAvailableStalls = asyncHandler(async (req, res, next) => {
+  const [stalls] = await pool.query(
+    `SELECT s.id, s.stallName, s.description, s.specialty, s.rating
+     FROM stalls s
+     WHERE NOT EXISTS (
+       SELECT 1 FROM users u 
+       WHERE u.stallId = s.id 
+       AND u.role = 'shopkeeper' 
+       AND u.isActive = 1
+       AND u.isApproved = 1
+     )
+     ORDER BY s.stallName`
+  );
+
+  res.json({
+    success: true,
+    count: stalls.length,
+    data: stalls
+  });
+});

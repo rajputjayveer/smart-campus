@@ -1,0 +1,40 @@
+id,stallId,name,price,description,image,popular
+j1,1,Jumbo Vada Pav,25,Our signature oversized vada pav with special chutney,https://images.pexels.com/photos/15017417/pexels-photo-15017417.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+j2,1,VIP Vada Pav,40,Premium vada pav with cheese and special sauce,https://images.pexels.com/photos/15017417/pexels-photo-15017417.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,false
+j3,1,Indi-Italia Vada Pav,40,Fusion vada pav with Italian herbs,https://images.pexels.com/photos/15017417/pexels-photo-15017417.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,false
+j4,1,Jantar Mantar Vada Pav,40,Spicy Delhi-style vada pav,https://images.pexels.com/photos/15017417/pexels-photo-15017417.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,false
+j5,1,Samosa Plate (2Pcs),30,Crispy samosas with mint chutney,https://images.pexels.com/photos/14883757/pexels-photo-14883757.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+j6,1,Samosa Pav,35,Crispy samosa in bun with chutneys,https://images.pexels.com/photos/14883757/pexels-photo-14883757.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+j7,1,Vadapav,30,Classic Mumbai style vada pav,https://images.pexels.com/photos/15017417/pexels-photo-15017417.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+m1,3,Burger Combo,120,Juicy burger with fries and drink,https://images.pexels.com/photos/1633578/pexels-photo-1633578.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+m2,3,Shake Combo,145,Thick shake with sandwich,https://images.pexels.com/photos/1099680/pexels-photo-1099680.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,false
+m3,3,Garlic Bread Combo,200,Garlic bread with pasta,https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+m4,3,Chilli Toast Combo,150,Spicy chilli toast with soup,https://images.pexels.com/photos/461198/pexels-photo-461198.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,false
+m5,3,Pizza Combo,220,Personal pizza with salad and drink,https://images.pexels.com/photos/803290/pexels-photo-803290.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+m6,3,Pizza,79,Cheesy pizza with fresh toppings,https://images.pexels.com/photos/803290/pexels-photo-803290.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+m7,3,Burger,49,Juicy burger with fresh veggies,https://images.pexels.com/photos/1633578/pexels-photo-1633578.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+m8,3,French fries,49,Crispy golden french fries,https://images.pexels.com/photos/1583884/pexels-photo-1583884.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+d1,2,Paneer Puff (Plain),30,Flaky pastry filled with fresh paneer,https://images.pexels.com/photos/7751646/pexels-photo-7751646.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+d2,2,Methi Puff (Sing),35,Healthy fenugreek leaves puff,https://images.pexels.com/photos/7751646/pexels-photo-7751646.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,false
+d3,2,Chinese Puff (Sev),40,Indo-Chinese fusion with crispy sev,https://images.pexels.com/photos/7751646/pexels-photo-7751646.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+d4,2,Schezwan Puff,40,Spicy Schezwan sauce puff,https://images.pexels.com/photos/7751646/pexels-photo-7751646.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,false
+d5,2,Cheese Puff,50,Loaded with melted cheese,https://images.pexels.com/photos/7751646/pexels-photo-7751646.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+d6,2,Paneer Puff,80,Flaky puff with spiced paneer filling,https://images.pexels.com/photos/7751646/pexels-photo-7751646.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+d7,2,Chinese Puff,70,Chinese style vegetable puff,https://images.pexels.com/photos/7751646/pexels-photo-7751646.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+s1,4,Hot coffee,60,Hot and aromatic coffee,https://images.pexels.com/photos/312420/pexels-photo-312420.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+s2,4,Cold coffee,80,Chilled coffee with cream,https://images.pexels.com/photos/312420/pexels-photo-312420.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+s3,4,Orea shake,100,Creamy Oreo milkshake,https://images.pexels.com/photos/1099680/pexels-photo-1099680.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+c1,5,Paneer Chilli,120,Spicy paneer with bell peppers,https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+c2,5,Manchurian,90,Vegetable balls in tangy sauce,https://images.pexels.com/photos/5744876/pexels-photo-5744876.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+p1,6,Sev Khamani,30,Traditional Gujarati snack,https://images.pexels.com/photos/10552758/pexels-photo-10552758.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+p2,6,Khaman,40,Soft and fluffy dhokla,https://images.pexels.com/photos/10552758/pexels-photo-10552758.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+p3,6,Dhokla,30,Steamed savory cake,https://images.pexels.com/photos/10552758/pexels-photo-10552758.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+r1,7,Frankie,70,Wrap with spicy filling,https://images.pexels.com/photos/461198/pexels-photo-461198.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+r2,7,Veg Rolls,90,Vegetable stuffed rolls,https://images.pexels.com/photos/461198/pexels-photo-461198.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+sy1,8,Korean noodles,90,Spicy Korean style noodles,https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+sy2,8,Orea Shake,80,Creamy Oreo milkshake,https://images.pexels.com/photos/1099680/pexels-photo-1099680.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+k1,9,Dosa,50,Crispy South Indian crepe,https://images.pexels.com/photos/5560763/pexels-photo-5560763.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+k2,9,Idli,40,Steamed rice cakes,https://images.pexels.com/photos/5560763/pexels-photo-5560763.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+k3,9,Appam,30,Soft rice hoppers,https://images.pexels.com/photos/5560763/pexels-photo-5560763.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+mt1,10,Dabeli,30,Spicy potato filled bun,https://images.pexels.com/photos/15017417/pexels-photo-15017417.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
+mt2,10,Vadapav,30,Classic Mumbai street food,https://images.pexels.com/photos/15017417/pexels-photo-15017417.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop,true
