@@ -128,9 +128,11 @@ const createOrder = asyncHandler(async (req, res, next) => {
     let discountAmount = 0;
     let appliedCoupon = null;
 
+    const orderStallId = items && items.length > 0 ? items[0].stallId : null;
+
     if (couponCode) {
         await ensureCouponTables();
-        const validated = await findAndValidateCoupon(couponCode, rawTotal);
+        const validated = await findAndValidateCoupon(couponCode, rawTotal, orderStallId);
         appliedCoupon = validated.coupon;
         discountAmount = validated.discountAmount;
         finalTotal = validated.finalAmount;
@@ -150,8 +152,6 @@ const createOrder = asyncHandler(async (req, res, next) => {
     const paymentStatus = paymentId ? 'completed' : 'pending';
 
     // Insert order (support multiple schemas: user JSON vs userId, and optional payment columns)
-    const orderStallId = items && items.length > 0 ? items[0].stallId : null;
-
     const insertWithUserJson = async (includePaymentFields, includeStallId) => {
         if (includePaymentFields) {
             return pool.execute(
@@ -238,9 +238,9 @@ const createOrder = asyncHandler(async (req, res, next) => {
             await pool.execute('UPDATE coupons SET usedCount = usedCount + 1 WHERE id = ?', [appliedCoupon.id]);
             await pool.execute(
                 `INSERT INTO coupon_redemptions
-                (couponId, orderId, userId, code, orderAmount, discountAmount, finalAmount)
-                VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [appliedCoupon.id, id, user.id, appliedCoupon.code, rawTotal, discountAmount, finalTotal]
+                (couponId, orderId, userId, stallId, code, orderAmount, discountAmount, finalAmount)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [appliedCoupon.id, id, user.id, orderStallId || null, appliedCoupon.code, rawTotal, discountAmount, finalTotal]
             );
         } catch (error) {
             console.error('Coupon redemption save failed:', error.message);

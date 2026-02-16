@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Package, RefreshCw, CheckCircle, Clock, Utensils, Plus, Trash2, Pencil, Save, X } from 'lucide-react';
 import api from '../services/api';
+import ShopkeeperCouponManagement from './ShopkeeperCouponManagement';
 
 const statusOptions = ['pending', 'preparing', 'ready', 'completed', 'cancelled'];
 
@@ -176,6 +177,16 @@ export default function ShopkeeperPanel({ user, showToast }) {
                     }`}
                 >
                     Menu
+                </button>
+                <button
+                    onClick={() => setActiveTab('coupons')}
+                    className={`px-5 py-3 font-semibold transition-colors rounded-t-lg ${
+                        activeTab === 'coupons'
+                            ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white'
+                            : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                >
+                    Coupons
                 </button>
             </div>
 
@@ -450,6 +461,10 @@ export default function ShopkeeperPanel({ user, showToast }) {
                         </div>
                     )}
                 </div>
+            )}
+
+            {activeTab === 'coupons' && (
+                <ShopkeeperCouponManagement showToast={showToast} />
             )}
         </div>
     );

@@ -276,6 +276,7 @@ This file is the single source document for workflow, panel data understanding, 
   - Create coupon code
   - Activate/deactivate coupon
   - Delete coupon
+- Admin coupons are global (apply to all stalls).
 - Coupon configuration supports:
   - `discountType` (`percentage` / `fixed`)
   - `discountValue`
@@ -291,6 +292,10 @@ This file is the single source document for workflow, panel data understanding, 
   - Discount
   - Final payable amount
 - API used: `POST /api/coupons/validate`
+- Coupon validation is stall-aware, so stall coupons only work for that stall.
+- Customer sees a header offer slidebar on each selected stall with:
+  - Stall coupons
+  - Global admin coupons
 
 ### D) Coupon + Order DB Storage
 - Coupon master data stored in: `coupons` table
@@ -299,6 +304,14 @@ This file is the single source document for workflow, panel data understanding, 
 - Coupon redemption tracking includes:
   - `couponId`, `orderId`, `userId`, `code`
   - `orderAmount`, `discountAmount`, `finalAmount`
+- Coupon scope fields:
+  - `stallId` (`NULL` = admin/global coupon, non-NULL = shopkeeper stall coupon)
+  - `createdByRole` (`admin` or `shopkeeper`)
+
+### F) Shopkeeper Coupon Management
+- Shopkeepers can create coupons only for their own stall.
+- Shopkeepers can view/toggle/delete only their own stall coupons.
+- Shopkeeper coupon data is stored in DB with `stallId` mapped to that shop.
 
 ### E) Migration Added
 - SQL migration file:

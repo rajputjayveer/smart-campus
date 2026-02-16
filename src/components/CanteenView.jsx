@@ -16,6 +16,7 @@ export default function CanteenView({ user, showToast }) {
     const [couponCode, setCouponCode] = useState('');
     const [couponData, setCouponData] = useState(null);
     const [applyingCoupon, setApplyingCoupon] = useState(false);
+    const [availableOffers, setAvailableOffers] = useState([]);
 
     useEffect(() => {
         loadStalls();
@@ -45,6 +46,19 @@ export default function CanteenView({ user, showToast }) {
         } catch (err) {
             showToast.error('Failed to load menu');
             setMenuItems([]);
+        }
+    };
+
+    const loadOffersForStall = async (stallId) => {
+        if (!stallId) {
+            setAvailableOffers([]);
+            return;
+        }
+        try {
+            const offers = await api.getAvailableOffers(stallId);
+            setAvailableOffers(Array.isArray(offers) ? offers : []);
+        } catch (err) {
+            setAvailableOffers([]);
         }
     };
 
@@ -82,6 +96,15 @@ export default function CanteenView({ user, showToast }) {
         }
     }, [cart.length]);
 
+    useEffect(() => {
+        if (selectedStall?.id) {
+            clearCoupon();
+            loadOffersForStall(selectedStall.id);
+        } else {
+            setAvailableOffers([]);
+        }
+    }, [selectedStall?.id]);
+
     const applyCoupon = async () => {
         if (!couponCode.trim()) {
             showToast.error('Please enter a coupon code');
@@ -94,7 +117,7 @@ export default function CanteenView({ user, showToast }) {
 
         setApplyingCoupon(true);
         try {
-            const data = await api.validateCoupon(couponCode.trim(), cartTotal);
+            const data = await api.validateCoupon(couponCode.trim(), cartTotal, selectedStall?.id || null);
             setCouponData(data);
             setCouponCode((data.code || couponCode).toUpperCase());
             showToast.success(`Coupon applied! You saved INR ${Number(data.discountAmount || 0).toFixed(2)}`);
@@ -285,6 +308,35 @@ export default function CanteenView({ user, showToast }) {
                         <div className="mb-6">
                             <h2 className="text-2xl font-bold mb-2">{selectedStall.stallName}</h2>
                             <p className="text-gray-600 mb-4">{selectedStall.description}</p>
+
+                            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                                <p className="text-xs font-semibold text-amber-700 mb-2">Available Offers (Shop + Admin)</p>
+                                {availableOffers.length === 0 ? (
+                                    <p className="text-xs text-amber-700/80">No active offers for this stall right now.</p>
+                                ) : (
+                                    <div className="flex gap-2 overflow-x-auto pb-1">
+                                        {availableOffers.map((offer) => (
+                                            <div
+                                                key={offer.id}
+                                                className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-2 min-w-[200px]"
+                                            >
+                                                <p className="text-sm font-bold text-amber-800">{offer.code}</p>
+                                                <p className="text-xs text-gray-700">
+                                                    {offer.discountType === 'percentage'
+                                                        ? `${offer.discountValue}% OFF`
+                                                        : `INR ${offer.discountValue} OFF`}
+                                                </p>
+                                                <p className="text-[11px] text-gray-500">
+                                                    Min order: INR {Number(offer.minOrderAmount || 0).toFixed(0)}
+                                                </p>
+                                                <p className="text-[11px] text-gray-500">
+                                                    {offer.stallId ? 'Shop Offer' : 'Admin Offer'}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />

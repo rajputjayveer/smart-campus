@@ -285,15 +285,23 @@ class ApiService {
     }
 
     // Coupon APIs
-    async validateCoupon(code, orderAmount) {
+    async validateCoupon(code, orderAmount, stallId) {
         return this.request('/coupons/validate', {
             method: 'POST',
-            body: JSON.stringify({ code, orderAmount }),
+            body: JSON.stringify({ code, orderAmount, stallId }),
         });
     }
 
     async getCoupons() {
         return this.request('/coupons');
+    }
+
+    async getShopkeeperCoupons() {
+        return this.request('/coupons/my');
+    }
+
+    async getAvailableOffers(stallId) {
+        return this.request(`/coupons/available?stallId=${stallId}`);
     }
 
     async createCoupon(couponData) {

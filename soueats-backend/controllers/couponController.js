@@ -2,6 +2,25 @@ const asyncHandler = require('../middleware/asyncHandler');
 const { AppError } = require('../middleware/errorHandler');
 const { pool } = require('../config/database');
 
+const columnExists = async (tableName, columnName) => {
+    const [rows] = await pool.execute(
+        `SELECT COUNT(*) AS count
+         FROM information_schema.columns
+         WHERE table_schema = DATABASE()
+           AND table_name = ?
+           AND column_name = ?`,
+        [tableName, columnName]
+    );
+    return Number(rows?.[0]?.count || 0) > 0;
+};
+
+const addColumnIfMissing = async (tableName, columnName, columnDefinition) => {
+    const exists = await columnExists(tableName, columnName);
+    if (!exists) {
+        await pool.execute(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDefinition}`);
+    }
+};
+
 const ensureCouponTables = async () => {
     await pool.execute(`
         CREATE TABLE IF NOT EXISTS coupons (
@@ -13,13 +32,19 @@ const ensureCouponTables = async () => {
             maxDiscount DECIMAL(10,2) DEFAULT NULL,
             usageLimit INT DEFAULT NULL,
             usedCount INT DEFAULT 0,
+            stallId INT DEFAULT NULL,
             isActive TINYINT(1) DEFAULT 1,
             expiresAt DATETIME DEFAULT NULL,
             createdBy CHAR(36) DEFAULT NULL,
+            createdByRole ENUM('admin', 'shopkeeper') DEFAULT 'admin',
             createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+
+    // Backward compatibility: add missing columns for older installs.
+    await addColumnIfMissing('coupons', 'stallId', 'INT DEFAULT NULL');
+    await addColumnIfMissing('coupons', 'createdByRole', 'ENUM("admin", "shopkeeper") DEFAULT "admin"');
 
     await pool.execute(`
         CREATE TABLE IF NOT EXISTS coupon_redemptions (
@@ -27,6 +52,7 @@ const ensureCouponTables = async () => {
             couponId INT NOT NULL,
             orderId CHAR(36) NOT NULL,
             userId CHAR(36) NOT NULL,
+            stallId INT DEFAULT NULL,
             code VARCHAR(50) NOT NULL,
             orderAmount DECIMAL(10,2) NOT NULL,
             discountAmount DECIMAL(10,2) NOT NULL,
@@ -39,6 +65,8 @@ const ensureCouponTables = async () => {
                 FOREIGN KEY (couponId) REFERENCES coupons(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+
+    await addColumnIfMissing('coupon_redemptions', 'stallId', 'INT DEFAULT NULL');
 };
 
 const calculateDiscount = (coupon, orderAmount) => {
@@ -60,7 +88,7 @@ const calculateDiscount = (coupon, orderAmount) => {
     return Number(discount.toFixed(2));
 };
 
-const findAndValidateCoupon = async (code, orderAmount) => {
+const findAndValidateCoupon = async (code, orderAmount, stallId = null) => {
     const normalizedCode = String(code || '').trim().toUpperCase();
     if (!normalizedCode) {
         throw new AppError('Coupon code is required', 400);
@@ -94,6 +122,10 @@ const findAndValidateCoupon = async (code, orderAmount) => {
         throw new AppError('Coupon usage limit reached', 400);
     }
 
+    if (coupon.stallId && String(coupon.stallId) !== String(stallId)) {
+        throw new AppError('This coupon is only valid for another stall', 400);
+    }
+
     if (amount < Number(coupon.minOrderAmount || 0)) {
         throw new AppError(
             `Minimum order amount for this coupon is INR ${Number(coupon.minOrderAmount).toFixed(2)}`,
@@ -116,8 +148,29 @@ const findAndValidateCoupon = async (code, orderAmount) => {
 const getCoupons = asyncHandler(async (req, res) => {
     await ensureCouponTables();
     const [rows] = await pool.execute(
-        'SELECT * FROM coupons ORDER BY createdAt DESC'
+        'SELECT * FROM coupons WHERE createdByRole = "admin" ORDER BY createdAt DESC'
     );
+    res.json({ success: true, data: rows });
+});
+
+const getMyStallCoupons = asyncHandler(async (req, res, next) => {
+    await ensureCouponTables();
+
+    const [users] = await pool.execute(
+        'SELECT stallId FROM users WHERE id = ? LIMIT 1',
+        [req.user.id]
+    );
+
+    if (users.length === 0 || !users[0].stallId) {
+        return next(new AppError('Shopkeeper stall not found', 400));
+    }
+
+    const stallId = users[0].stallId;
+    const [rows] = await pool.execute(
+        'SELECT * FROM coupons WHERE stallId = ? AND createdByRole = "shopkeeper" ORDER BY createdAt DESC',
+        [stallId]
+    );
+
     res.json({ success: true, data: rows });
 });
 
@@ -177,11 +230,31 @@ const createCoupon = asyncHandler(async (req, res, next) => {
         }
     }
 
+    let targetStallId = null;
+    let creatorRole = 'admin';
+
+    if (req.user.role === 'shopkeeper') {
+        creatorRole = 'shopkeeper';
+        const [users] = await pool.execute(
+            'SELECT stallId FROM users WHERE id = ? LIMIT 1',
+            [req.user.id]
+        );
+        if (users.length === 0 || !users[0].stallId) {
+            return next(new AppError('Shopkeeper stall not found', 400));
+        }
+        targetStallId = users[0].stallId;
+    } else if (req.user.role === 'admin') {
+        creatorRole = 'admin';
+        targetStallId = null; // Admin coupon is global by requirement.
+    } else {
+        return next(new AppError('Not authorized to create coupons', 403));
+    }
+
     try {
         const [result] = await pool.execute(
             `INSERT INTO coupons
-            (code, discountType, discountValue, minOrderAmount, maxDiscount, usageLimit, expiresAt, createdBy)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            (code, discountType, discountValue, minOrderAmount, maxDiscount, usageLimit, stallId, expiresAt, createdBy, createdByRole)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 normalizedCode,
                 discountType,
@@ -189,8 +262,10 @@ const createCoupon = asyncHandler(async (req, res, next) => {
                 parsedMinOrder,
                 parsedMaxDiscount,
                 parsedUsageLimit,
+                targetStallId,
                 parsedExpiry,
-                req.user?.id || null
+                req.user?.id || null,
+                creatorRole
             ]
         );
 
@@ -204,6 +279,8 @@ const createCoupon = asyncHandler(async (req, res, next) => {
                 minOrderAmount: parsedMinOrder,
                 maxDiscount: parsedMaxDiscount,
                 usageLimit: parsedUsageLimit,
+                stallId: targetStallId,
+                createdByRole: creatorRole,
                 expiresAt: parsedExpiry
             }
         });
@@ -219,9 +296,19 @@ const toggleCouponStatus = asyncHandler(async (req, res, next) => {
     await ensureCouponTables();
     const { id } = req.params;
 
-    const [existing] = await pool.execute('SELECT id, isActive FROM coupons WHERE id = ?', [id]);
+    const [existing] = await pool.execute('SELECT id, isActive, stallId, createdByRole FROM coupons WHERE id = ?', [id]);
     if (existing.length === 0) {
         return next(new AppError('Coupon not found', 404));
+    }
+
+    const coupon = existing[0];
+    if (req.user.role === 'shopkeeper') {
+        const [users] = await pool.execute('SELECT stallId FROM users WHERE id = ? LIMIT 1', [req.user.id]);
+        if (users.length === 0 || !users[0].stallId || String(users[0].stallId) !== String(coupon.stallId)) {
+            return next(new AppError('Not authorized for this coupon', 403));
+        }
+    } else if (req.user.role !== 'admin') {
+        return next(new AppError('Not authorized', 403));
     }
 
     const nextStatus = existing[0].isActive ? 0 : 1;
@@ -236,6 +323,21 @@ const toggleCouponStatus = asyncHandler(async (req, res, next) => {
 const deleteCoupon = asyncHandler(async (req, res, next) => {
     await ensureCouponTables();
     const { id } = req.params;
+
+    const [existing] = await pool.execute('SELECT id, stallId FROM coupons WHERE id = ?', [id]);
+    if (existing.length === 0) {
+        return next(new AppError('Coupon not found', 404));
+    }
+
+    if (req.user.role === 'shopkeeper') {
+        const [users] = await pool.execute('SELECT stallId FROM users WHERE id = ? LIMIT 1', [req.user.id]);
+        if (users.length === 0 || !users[0].stallId || String(users[0].stallId) !== String(existing[0].stallId)) {
+            return next(new AppError('Not authorized for this coupon', 403));
+        }
+    } else if (req.user.role !== 'admin') {
+        return next(new AppError('Not authorized', 403));
+    }
+
     const [result] = await pool.execute('DELETE FROM coupons WHERE id = ?', [id]);
     if (result.affectedRows === 0) {
         return next(new AppError('Coupon not found', 404));
@@ -245,8 +347,8 @@ const deleteCoupon = asyncHandler(async (req, res, next) => {
 
 const validateCoupon = asyncHandler(async (req, res) => {
     await ensureCouponTables();
-    const { code, orderAmount } = req.body;
-    const validated = await findAndValidateCoupon(code, orderAmount);
+    const { code, orderAmount, stallId } = req.body;
+    const validated = await findAndValidateCoupon(code, orderAmount, stallId);
 
     res.json({
         success: true,
@@ -258,18 +360,47 @@ const validateCoupon = asyncHandler(async (req, res) => {
             discountAmount: validated.discountAmount,
             orderAmount: Number(orderAmount),
             finalAmount: validated.finalAmount,
+            stallId: validated.coupon.stallId,
             minOrderAmount: Number(validated.coupon.minOrderAmount || 0),
             maxDiscount: validated.coupon.maxDiscount !== null ? Number(validated.coupon.maxDiscount) : null
         }
     });
 });
 
+const getAvailableOffers = asyncHandler(async (req, res, next) => {
+    await ensureCouponTables();
+    const { stallId } = req.query;
+
+    if (!stallId) {
+        return next(new AppError('stallId is required', 400));
+    }
+
+    const [rows] = await pool.execute(
+        `SELECT id, code, discountType, discountValue, minOrderAmount, maxDiscount, usageLimit, usedCount, stallId, expiresAt
+         FROM coupons
+         WHERE isActive = 1
+           AND (expiresAt IS NULL OR expiresAt > NOW())
+           AND (stallId IS NULL OR stallId = ?)
+         ORDER BY stallId DESC, createdAt DESC`,
+        [stallId]
+    );
+
+    const offers = rows.filter((coupon) => {
+        if (coupon.usageLimit === null) return true;
+        return Number(coupon.usedCount) < Number(coupon.usageLimit);
+    });
+
+    res.json({ success: true, data: offers });
+});
+
 module.exports = {
     ensureCouponTables,
     findAndValidateCoupon,
     getCoupons,
+    getMyStallCoupons,
     createCoupon,
     toggleCouponStatus,
     deleteCoupon,
-    validateCoupon
+    validateCoupon,
+    getAvailableOffers
 };

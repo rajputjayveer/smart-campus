@@ -1,5 +1,5 @@
-forgot workflow add 
-
 reg menu and chatbot 
 
-shoopekepper and coupen code with notification 
+also add shopkeeper can create coupen code for that perticuler shope it is not for other shop and admin coupen is for all also make one slidebar on header of each shope which show all availble offer for that shop (that shop+admin)  for each shope alsoo store data in db completely 
+
+per user coupen limit should be alsso both admin and shopkeeper ,  not as if 1 time used then not open also db changes should be automically happen 

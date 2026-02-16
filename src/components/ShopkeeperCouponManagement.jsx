@@ -12,7 +12,7 @@ const initialForm = {
     expiresAt: ''
 };
 
-export default function CouponManagement({ showToast }) {
+export default function ShopkeeperCouponManagement({ showToast }) {
     const [coupons, setCoupons] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -21,10 +21,10 @@ export default function CouponManagement({ showToast }) {
     const loadCoupons = async () => {
         try {
             setLoading(true);
-            const data = await api.getCoupons();
+            const data = await api.getShopkeeperCoupons();
             setCoupons(Array.isArray(data) ? data : []);
         } catch (error) {
-            showToast?.error?.('Failed to load coupons');
+            showToast?.error?.('Failed to load your coupons');
         } finally {
             setLoading(false);
         }
@@ -45,7 +45,7 @@ export default function CouponManagement({ showToast }) {
                 usageLimit: formData.usageLimit === '' ? null : Number(formData.usageLimit),
                 expiresAt: formData.expiresAt || null
             });
-            showToast?.success?.('Coupon created');
+            showToast?.success?.('Shop coupon created');
             setFormData(initialForm);
             setShowForm(false);
             loadCoupons();
@@ -79,8 +79,8 @@ export default function CouponManagement({ showToast }) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Coupon Management</h2>
-                    <p className="text-sm text-gray-500">Create and manage global coupon codes (all stalls)</p>
+                    <h2 className="text-2xl font-bold text-gray-800">Shop Coupons</h2>
+                    <p className="text-sm text-gray-500">These offers apply only to your stall</p>
                 </div>
                 <button
                     onClick={() => setShowForm(!showForm)}
@@ -93,7 +93,7 @@ export default function CouponManagement({ showToast }) {
 
             {showForm && (
                 <div className="bg-white rounded-xl shadow-md p-6">
-                    <h3 className="text-lg font-bold mb-4">Create Coupon</h3>
+                    <h3 className="text-lg font-bold mb-4">Create Shop Coupon</h3>
                     <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">Code *</label>
@@ -103,7 +103,7 @@ export default function CouponManagement({ showToast }) {
                                 value={formData.code}
                                 onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                                 className="w-full px-3 py-2 border rounded-lg"
-                                placeholder="SAVE20"
+                                placeholder="STALL20"
                             />
                         </div>
                         <div>
@@ -202,13 +202,11 @@ export default function CouponManagement({ showToast }) {
                                     {coupon.isActive ? 'Active' : 'Inactive'}
                                 </span>
                             </div>
-
                             <div className="mt-3 space-y-1 text-xs text-gray-600">
                                 <p>Min Order: INR {Number(coupon.minOrderAmount || 0).toFixed(2)}</p>
                                 <p>Used: {coupon.usedCount}{coupon.usageLimit ? ` / ${coupon.usageLimit}` : ''}</p>
                                 <p>Expires: {coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleString() : 'Never'}</p>
                             </div>
-
                             <div className="mt-4 flex gap-2">
                                 <button
                                     onClick={() => handleToggle(coupon.id)}
@@ -232,7 +230,7 @@ export default function CouponManagement({ showToast }) {
             {!loading && coupons.length === 0 && (
                 <div className="text-center py-12 text-gray-500">
                     <Ticket className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                    <p>No coupons created yet.</p>
+                    <p>No shop coupons created yet.</p>
                 </div>
             )}
         </div>
