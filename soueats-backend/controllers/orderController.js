@@ -132,7 +132,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
 
     if (couponCode) {
         await ensureCouponTables();
-        const validated = await findAndValidateCoupon(couponCode, rawTotal, orderStallId);
+        const validated = await findAndValidateCoupon(couponCode, rawTotal, orderStallId, user.id);
         appliedCoupon = validated.coupon;
         discountAmount = validated.discountAmount;
         finalTotal = validated.finalAmount;

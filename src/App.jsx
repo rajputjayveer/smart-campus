@@ -24,30 +24,30 @@ const CustomerApp = ({ user, showToast }) => {
       <div className="mb-6 flex flex-wrap gap-3 border-b border-gray-200">
         <button
           onClick={() => setActiveTab('canteen')}
-          className={`px-5 py-3 font-semibold transition-colors rounded-t-lg ${
+          className={`px-5 py-3 font-semibold transition-all rounded-t-lg ${
             activeTab === 'canteen'
-              ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:-translate-y-0.5'
           }`}
         >
           Canteen
         </button>
         <button
           onClick={() => setActiveTab('orders')}
-          className={`px-5 py-3 font-semibold transition-colors rounded-t-lg ${
+          className={`px-5 py-3 font-semibold transition-all rounded-t-lg ${
             activeTab === 'orders'
-              ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:-translate-y-0.5'
           }`}
         >
           My Orders
         </button>
         <button
           onClick={() => setActiveTab('profile')}
-          className={`px-5 py-3 font-semibold transition-colors rounded-t-lg ${
+          className={`px-5 py-3 font-semibold transition-all rounded-t-lg ${
             activeTab === 'profile'
-              ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:-translate-y-0.5'
           }`}
         >
           Profile
@@ -154,9 +154,9 @@ export default function App() {
     return (
       <>
         <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
-        <div className="fixed top-20 right-4 z-50 space-y-2">
-          {toasts.map(toast => (
-            <Toast key={toast.id} message={toast.message} type={toast.type} duration={toast.duration} onClose={() => removeToast(toast.id)} />
+        <div className="fixed top-20 right-4 z-50 flex flex-col items-end gap-3">
+          {toasts.map((toast, index) => (
+            <Toast key={toast.id} message={toast.message} type={toast.type} duration={toast.duration} index={index} onClose={() => removeToast(toast.id)} />
           ))}
         </div>
       </>
@@ -175,9 +175,9 @@ export default function App() {
             success('Password reset successful! Please login.');
           }}
         />
-        <div className="fixed top-20 right-4 z-50 space-y-2">
-          {toasts.map(toast => (
-            <Toast key={toast.id} message={toast.message} type={toast.type} duration={toast.duration} onClose={() => removeToast(toast.id)} />
+        <div className="fixed top-20 right-4 z-50 flex flex-col items-end gap-3">
+          {toasts.map((toast, index) => (
+            <Toast key={toast.id} message={toast.message} type={toast.type} duration={toast.duration} index={index} onClose={() => removeToast(toast.id)} />
           ))}
         </div>
       </>
@@ -201,9 +201,9 @@ export default function App() {
           />
         )}
 
-        <div className="fixed top-20 right-4 z-50 space-y-2">
-          {toasts.map(toast => (
-            <Toast key={toast.id} message={toast.message} type={toast.type} duration={toast.duration} onClose={() => removeToast(toast.id)} />
+        <div className="fixed top-20 right-4 z-50 flex flex-col items-end gap-3">
+          {toasts.map((toast, index) => (
+            <Toast key={toast.id} message={toast.message} type={toast.type} duration={toast.duration} index={index} onClose={() => removeToast(toast.id)} />
           ))}
         </div>
       </>
@@ -253,16 +253,16 @@ export default function App() {
       </header>
 
       {/* Main Content - Show view based on role */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 rise-in">
         {user.role === 'customer' && <CustomerApp user={user} showToast={{ success, error: showError, info }} />}
         {user.role === 'shopkeeper' && <ShopkeeperPanel user={user} showToast={{ success, error: showError, info }} />}
         {user.role === 'admin' && <AdminView showToast={{ success, error: showError, info }} />}
       </main>
 
       {/* Toast Notifications */}
-      <div className="fixed top-20 right-4 z-50 space-y-2">
-        {toasts.map(toast => (
-          <Toast key={toast.id} message={toast.message} type={toast.type} duration={toast.duration} onClose={() => removeToast(toast.id)} />
+      <div className="fixed top-20 right-4 z-50 flex flex-col items-end gap-3">
+        {toasts.map((toast, index) => (
+          <Toast key={toast.id} message={toast.message} type={toast.type} duration={toast.duration} index={index} onClose={() => removeToast(toast.id)} />
         ))}
       </div>
 

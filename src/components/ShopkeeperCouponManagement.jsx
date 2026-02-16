@@ -150,7 +150,7 @@ export default function ShopkeeperCouponManagement({ showToast }) {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Usage Limit (optional)</label>
+                            <label className="block text-sm font-medium mb-1">Per User Limit (optional)</label>
                             <input
                                 type="number"
                                 value={formData.usageLimit}

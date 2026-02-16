@@ -88,7 +88,7 @@ const calculateDiscount = (coupon, orderAmount) => {
     return Number(discount.toFixed(2));
 };
 
-const findAndValidateCoupon = async (code, orderAmount, stallId = null) => {
+const findAndValidateCoupon = async (code, orderAmount, stallId = null, userId = null) => {
     const normalizedCode = String(code || '').trim().toUpperCase();
     if (!normalizedCode) {
         throw new AppError('Coupon code is required', 400);
@@ -118,8 +118,15 @@ const findAndValidateCoupon = async (code, orderAmount, stallId = null) => {
         throw new AppError('Coupon has expired', 400);
     }
 
-    if (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
-        throw new AppError('Coupon usage limit reached', 400);
+    if (coupon.usageLimit !== null && userId) {
+        const [usageRows] = await pool.execute(
+            'SELECT COUNT(*) AS count FROM coupon_redemptions WHERE couponId = ? AND userId = ?',
+            [coupon.id, userId]
+        );
+        const userUsageCount = Number(usageRows?.[0]?.count || 0);
+        if (userUsageCount >= Number(coupon.usageLimit)) {
+            throw new AppError('Per-user coupon usage limit reached', 400);
+        }
     }
 
     if (coupon.stallId && String(coupon.stallId) !== String(stallId)) {
@@ -348,7 +355,7 @@ const deleteCoupon = asyncHandler(async (req, res, next) => {
 const validateCoupon = asyncHandler(async (req, res) => {
     await ensureCouponTables();
     const { code, orderAmount, stallId } = req.body;
-    const validated = await findAndValidateCoupon(code, orderAmount, stallId);
+    const validated = await findAndValidateCoupon(code, orderAmount, stallId, req.user?.id || null);
 
     res.json({
         success: true,
@@ -385,12 +392,7 @@ const getAvailableOffers = asyncHandler(async (req, res, next) => {
         [stallId]
     );
 
-    const offers = rows.filter((coupon) => {
-        if (coupon.usageLimit === null) return true;
-        return Number(coupon.usedCount) < Number(coupon.usageLimit);
-    });
-
-    res.json({ success: true, data: offers });
+    res.json({ success: true, data: rows });
 });
 
 module.exports = {

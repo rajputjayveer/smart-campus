@@ -4,13 +4,13 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, AlertCircle, Info, XCircle, X } from 'lucide-react';
 
-export function Toast({ message, type = 'info', duration = 3000, onClose }) {
+export function Toast({ message, type = 'info', duration = 3000, onClose, index = 0 }) {
     const [visible, setVisible] = useState(true);
 
     useEffect(() => {
         const timer = setTimeout(() => {
             setVisible(false);
-            setTimeout(onClose, 300); // Wait for fade out animation
+            setTimeout(onClose, 260);
         }, duration);
 
         return () => clearTimeout(timer);
@@ -23,40 +23,57 @@ export function Toast({ message, type = 'info', duration = 3000, onClose }) {
         info: Info
     };
 
-    const colors = {
-        success: 'bg-green-50 border-green-200 text-green-800',
-        error: 'bg-red-50 border-red-200 text-red-800',
-        warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-        info: 'bg-blue-50 border-blue-200 text-blue-800'
+    const styles = {
+        success: {
+            card: 'border-emerald-200/80 bg-white/95 text-emerald-900',
+            icon: 'bg-emerald-100 text-emerald-600',
+            bar: 'from-emerald-500 to-green-400'
+        },
+        error: {
+            card: 'border-rose-200/80 bg-white/95 text-rose-900',
+            icon: 'bg-rose-100 text-rose-600',
+            bar: 'from-rose-500 to-red-400'
+        },
+        warning: {
+            card: 'border-amber-200/80 bg-white/95 text-amber-900',
+            icon: 'bg-amber-100 text-amber-600',
+            bar: 'from-amber-500 to-yellow-400'
+        },
+        info: {
+            card: 'border-indigo-200/80 bg-white/95 text-indigo-900',
+            icon: 'bg-indigo-100 text-indigo-600',
+            bar: 'from-indigo-500 to-blue-400'
+        }
     };
 
-    const iconColors = {
-        success: 'text-green-600',
-        error: 'text-red-600',
-        warning: 'text-yellow-600',
-        info: 'text-blue-600'
-    };
-
-    const Icon = icons[type];
+    const Icon = icons[type] || Info;
+    const theme = styles[type] || styles.info;
 
     return (
-        <div
-            className={`fixed top-20 right-4 z-50 transition-all duration-300 ${visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
-                }`}
-        >
-            <div className={`${colors[type]} border rounded-xl shadow-lg p-4 pr-12 max-w-sm`}>
-                <div className="flex items-start">
-                    <Icon className={`h-5 w-5 ${iconColors[type]} mr-3 flex-shrink-0 mt-0.5`} />
-                    <p className="text-sm font-medium">{message}</p>
-                    <button
-                        onClick={() => {
-                            setVisible(false);
-                            setTimeout(onClose, 300);
-                        }}
-                        className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-                    >
-                        <X className="h-4 w-4" />
-                    </button>
+        <div className={`pointer-events-auto w-[360px] max-w-[92vw] ${visible ? 'toast-enter' : 'toast-exit'}`} style={{ animationDelay: `${index * 45}ms` }}>
+            <div className={`relative overflow-hidden rounded-2xl border shadow-[0_12px_30px_rgba(0,0,0,0.12)] backdrop-blur-xl ${theme.card}`}>
+                <div className="flex items-start gap-3 p-4 pr-11">
+                    <div className={`mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl ${theme.icon}`}>
+                        <Icon className="h-5 w-5" />
+                    </div>
+                    <p className="text-sm font-semibold leading-5">{message}</p>
+                </div>
+
+                <button
+                    onClick={() => {
+                        setVisible(false);
+                        setTimeout(onClose, 260);
+                    }}
+                    className="absolute right-3 top-3 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                >
+                    <X className="h-4 w-4" />
+                </button>
+
+                <div className="h-1 w-full bg-gray-100/80">
+                    <div
+                        className={`h-full bg-gradient-to-r ${theme.bar} toast-progress`}
+                        style={{ animationDuration: `${duration}ms` }}
+                    />
                 </div>
             </div>
         </div>
