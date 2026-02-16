@@ -3,7 +3,8 @@ const { AppError } = require('../middleware/errorHandler');
 const { pool } = require('../config/database');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+let knowledgeCache = { value: '', ts: 0 };
 
 const callGemini = async (prompt) => {
     if (!GEMINI_API_KEY) {
@@ -36,6 +37,82 @@ const callGemini = async (prompt) => {
 
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     return text.trim();
+};
+
+const getKnowledgeContext = async () => {
+    const now = Date.now();
+    if (knowledgeCache.value && now - knowledgeCache.ts < 5 * 60 * 1000) {
+        return knowledgeCache.value;
+    }
+
+    let stalls = [];
+    let menuItems = [];
+    let feedbackRows = [];
+
+    try {
+        const [stallData] = await pool.execute(
+            `SELECT id, stallName, specialty, rating
+             FROM stalls
+             ORDER BY rating DESC
+             LIMIT 25`
+        );
+        stalls = stallData || [];
+    } catch (e) {
+        stalls = [];
+    }
+
+    try {
+        const [menuData] = await pool.execute(
+            `SELECT m.name, m.price, m.popular, s.stallName
+             FROM menu m
+             JOIN stalls s ON m.stallId = s.id
+             ORDER BY m.popular DESC, m.name ASC
+             LIMIT 80`
+        );
+        menuItems = menuData || [];
+    } catch (e) {
+        menuItems = [];
+    }
+
+    try {
+        const [feedbackData] = await pool.execute(
+            `SELECT f.rating, f.comments, f.timestamp,
+                    COALESCE(s.stallName, f.stall) AS stallName
+             FROM feedbacks f
+             LEFT JOIN stalls s ON f.stallId = s.id
+             ORDER BY f.timestamp DESC
+             LIMIT 80`
+        );
+        feedbackRows = feedbackData || [];
+    } catch (e) {
+        feedbackRows = [];
+    }
+
+    const stallText = stalls.length
+        ? stalls.map(s => `${s.stallName} (${s.specialty || 'General'}, rating: ${s.rating ?? 'N/A'})`).join('\n')
+        : 'No stall data.';
+
+    const menuText = menuItems.length
+        ? menuItems.map(m => `${m.name} - INR ${m.price} @ ${m.stallName}${m.popular ? ' [popular]' : ''}`).join('\n')
+        : 'No menu data.';
+
+    const feedbackText = feedbackRows.length
+        ? feedbackRows.map(f => `[${f.stallName || 'Unknown'}] ${f.rating || 'N/A'}/5 - ${String(f.comments || '').slice(0, 160)}`).join('\n')
+        : 'No feedback data.';
+
+    const context = [
+        'STALL DATA:',
+        stallText,
+        '',
+        'MENU DATA:',
+        menuText,
+        '',
+        'RECENT FEEDBACK SUMMARY:',
+        feedbackText
+    ].join('\n');
+
+    knowledgeCache = { value: context, ts: now };
+    return context;
 };
 
 // @desc    Get suggestions based on feedback
@@ -83,10 +160,14 @@ const chat = asyncHandler(async (req, res, next) => {
         return next(new AppError('Message is required', 400));
     }
 
+    const dataContext = await getKnowledgeContext();
+
     const prompt = [
         'You are SouEats assistant. Keep replies friendly, short, and helpful.',
-        'If asked about campus food or orders, provide practical guidance.',
-        context ? `Context: ${context}` : '',
+        'Use only the provided data context for stall/menu/feedback based answers.',
+        'If the user asks for recommendations, suggest options based on ratings, menu popularity, and feedback sentiment from the provided context.',
+        context ? `Conversation Context:\n${context}` : '',
+        `Data Context:\n${dataContext}`,
         `User: ${message}`,
         'Assistant:'
     ].filter(Boolean).join('\n');

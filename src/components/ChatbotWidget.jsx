@@ -10,9 +10,15 @@ export default function ChatbotWidget() {
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
+    const presetQuestions = [
+        'What are the best-rated stalls right now?',
+        'Suggest popular items under INR 120.',
+        'Which stall has the best feedback today?',
+        'Recommend a quick pickup meal.'
+    ];
 
-    const sendMessage = async () => {
-        const text = input.trim();
+    const sendMessage = async (overrideText = '') => {
+        const text = (overrideText || input).trim();
         if (!text) return;
 
         const nextMessages = [...messages, { role: 'user', content: text }];
@@ -62,6 +68,18 @@ export default function ChatbotWidget() {
                     </div>
 
                     <div className="p-4 space-y-3 overflow-y-auto max-h-80">
+                        <div className="flex flex-wrap gap-2">
+                            {presetQuestions.map((q) => (
+                                <button
+                                    key={q}
+                                    onClick={() => sendMessage(q)}
+                                    disabled={loading}
+                                    className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+                                >
+                                    {q}
+                                </button>
+                            ))}
+                        </div>
                         {messages.map((msg, idx) => (
                             <div
                                 key={idx}
