@@ -63,7 +63,7 @@ const getKnowledgeContext = async () => {
 
     try {
         const [menuData] = await pool.execute(
-            `SELECT m.name, m.price, m.popular, s.stallName
+            `SELECT m.id, m.name, m.price, m.popular, s.id as stallId, s.stallName
              FROM menu m
              JOIN stalls s ON m.stallId = s.id
              ORDER BY m.popular DESC, m.name ASC
@@ -93,7 +93,7 @@ const getKnowledgeContext = async () => {
         : 'No stall data.';
 
     const menuText = menuItems.length
-        ? menuItems.map(m => `${m.name} - INR ${m.price} @ ${m.stallName}${m.popular ? ' [popular]' : ''}`).join('\n')
+        ? menuItems.map(m => `ID=${m.id} | ${m.name} - INR ${m.price} @ Stall "${m.stallName}" (StallID=${m.stallId})${m.popular ? ' [popular]' : ''}`).join('\n')
         : 'No menu data.';
 
     const feedbackText = feedbackRows.length
@@ -166,17 +166,43 @@ const chat = asyncHandler(async (req, res, next) => {
         'You are SouEats assistant. Keep replies friendly, short, and helpful.',
         'Use only the provided data context for stall/menu/feedback based answers.',
         'If the user asks for recommendations, suggest options based on ratings, menu popularity, and feedback sentiment from the provided context.',
+        '',
+        'CRITICAL ORDERING INSTRUCTION:',
+        'If the user expresses ANY intent to add items to their cart, order, buy, or get food, you MUST output a JSON codeblock at the VERY END of your response representing their current requested cart.',
+        'Even if they are just adding one item and you haven\'t finished the conversation (e.g., asking "Anything else?"), you MUST STILL output the JSON block so the UI can build the pending draft cart immediately.',
+        'The JSON format must be exactly like this: ```json { "intent": "order", "stallId": 1, "items": [ {"id": 10, "name": "Burger", "price": 50, "quantity": 1} ] } ```',
+        'RULES FOR ORDERING:',
+        '1. You MUST NOT mix items from different stalls. If the user asks for items from multiple different stalls, you must REFUSE the order, explain that they can only order from ONE stall at a time, and DO NOT output the JSON block.',
+        '2. Only output items that actually exist in the MENU DATA and match the requested stall.',
+        '3. If a stall is not specified by the user, guess the most likely stall based on the items, but ensure all items come from that same single stall.',
+        '',
         context ? `Conversation Context:\n${context}` : '',
         `Data Context:\n${dataContext}`,
         `User: ${message}`,
         'Assistant:'
     ].filter(Boolean).join('\n');
 
-    const reply = await callGemini(prompt);
+    let reply = await callGemini(prompt);
+
+    // Attempt to extract the JSON block if it exists
+    let orderIntent = null;
+    const jsonMatch = reply.match(/```json\s*([\s\S]*?)\s*```/);
+    if (jsonMatch && jsonMatch[1]) {
+        try {
+            orderIntent = JSON.parse(jsonMatch[1]);
+            // Remove the JSON block from the text reply so the user doesn't see raw JSON
+            reply = reply.replace(/```json\s*[\s\S]*?\s*```/, '').trim();
+        } catch (e) {
+            console.error("Failed to parse Gemini order JSON intent", e);
+        }
+    }
 
     res.json({
         success: true,
-        data: { reply }
+        data: {
+            reply,
+            orderIntent
+        }
     });
 });
 

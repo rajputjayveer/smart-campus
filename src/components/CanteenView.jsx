@@ -2,12 +2,13 @@
 import { useState, useEffect } from 'react';
 import { Store, Search, ShoppingCart, Star, Plus, Minus, Clock, CreditCard, TicketPercent, X, ShoppingBag, Receipt, Shield } from 'lucide-react';
 import api from '../services/api';
+import { useCart } from '../context/CartContext';
 
 export default function CanteenView({ user, showToast }) {
+    const { cart, addToCart: _contextAddToCart, removeFromCart, cartTotal, clearCart } = useCart();
     const [stalls, setStalls] = useState([]);
     const [selectedStall, setSelectedStall] = useState(null);
     const [menuItems, setMenuItems] = useState([]);
-    const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [pickupTime, setPickupTime] = useState('');
@@ -63,23 +64,14 @@ export default function CanteenView({ user, showToast }) {
     };
 
     const addToCart = (item) => {
-        const existing = cart.find(i => i.id === item.id);
-        if (existing) {
-            // Only increment quantity, don't show toast
-            setCart(cart.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
-        } else {
-            // Add new item to cart without toast
-            setCart([...cart, { ...item, quantity: 1 }]);
+        // Enforce the backend rule locally as well: "1 stall per cart"
+        if (cart.length > 0 && cart[0].stallId !== (item.stallId || selectedStall?.id)) {
+            showToast.error("You can only order from one stall at a time. Please checkout or clear your cart first.");
+            return;
         }
-    };
 
-    const removeFromCart = (itemId) => {
-        const existing = cart.find(i => i.id === itemId);
-        if (existing.quantity > 1) {
-            setCart(cart.map(i => i.id === itemId ? { ...i, quantity: i.quantity - 1 } : i));
-        } else {
-            setCart(cart.filter(i => i.id !== itemId));
-        }
+        const completeItem = { ...item, stallId: item.stallId || selectedStall?.id };
+        _contextAddToCart(completeItem, 1);
     };
 
     const clearCoupon = () => {
@@ -87,7 +79,6 @@ export default function CanteenView({ user, showToast }) {
         setCouponData(null);
     };
 
-    const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const discountAmount = couponData ? Number(couponData.discountAmount || 0) : 0;
     const finalTotal = Math.max(0, cartTotal - discountAmount);
 
@@ -234,7 +225,7 @@ export default function CanteenView({ user, showToast }) {
             });
 
             showToast.success('Order placed successfully!');
-            setCart([]);
+            clearCart();
             setPickupTime('');
             clearCoupon();
             setShowPayment(false);
@@ -388,10 +379,21 @@ export default function CanteenView({ user, showToast }) {
             {cart.length > 0 && (
                 <div className="md:col-span-1 xl:col-span-1 lg:col-span-1 order-3 h-full overflow-hidden hidden md:block rise-in">
                     <div className="bg-white rounded-xl shadow-lg p-4 lg:p-5 flex flex-col h-full border border-gray-100">
-                        <div className="flex items-center mb-4 flex-shrink-0">
+                        <div className="flex items-center mb-1 flex-shrink-0">
                             <ShoppingCart className="h-5 w-5 lg:h-6 lg:w-6 text-indigo-600 mr-2" />
                             <h2 className="text-lg lg:text-xl font-bold">Cart ({cart.length})</h2>
                         </div>
+                        {cart.length > 0 && (() => {
+                            const cartStallId = cart[0]?.stallId;
+                            const cartStall = stalls.find(s => s.id === cartStallId);
+                            const stallLabel = cartStall?.stallName || cart[0]?.stallName;
+                            return stallLabel ? (
+                                <div className="flex items-center gap-1.5 mb-3 px-2 py-1 bg-indigo-50 rounded-lg border border-indigo-100">
+                                    <Store className="h-3 w-3 text-indigo-500 flex-shrink-0" />
+                                    <p className="text-xs font-semibold text-indigo-700 truncate">{stallLabel}</p>
+                                </div>
+                            ) : null;
+                        })()}
 
                         <div className="flex-1 overflow-y-auto space-y-3 mb-4">
                             {cart.map((item, index) => (

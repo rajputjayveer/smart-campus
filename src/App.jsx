@@ -18,6 +18,12 @@ import ChatbotWidget from './components/ChatbotWidget';
 const CustomerApp = ({ user, showToast }) => {
   const [activeTab, setActiveTab] = useState('canteen');
 
+  useEffect(() => {
+    const handleNav = () => setActiveTab('canteen');
+    window.addEventListener('navigate_to_canteen', handleNav);
+    return () => window.removeEventListener('navigate_to_canteen', handleNav);
+  }, []);
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Navigation Tabs - Mobile Responsive */}
@@ -26,8 +32,8 @@ const CustomerApp = ({ user, showToast }) => {
           <button
             onClick={() => setActiveTab('canteen')}
             className={`px-3 sm:px-5 py-2 sm:py-3 text-sm sm:text-base font-semibold transition-all rounded-lg sm:rounded-t-lg ${activeTab === 'canteen'
-                ? 'border-b-2 sm:border-b-2 border-indigo-600 text-indigo-600 bg-indigo-50 sm:bg-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 sm:hover:bg-transparent hover:-translate-y-0.5'
+              ? 'border-b-2 sm:border-b-2 border-indigo-600 text-indigo-600 bg-indigo-50 sm:bg-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 sm:hover:bg-transparent hover:-translate-y-0.5'
               }`}
           >
             🍽️ Canteen
@@ -35,8 +41,8 @@ const CustomerApp = ({ user, showToast }) => {
           <button
             onClick={() => setActiveTab('orders')}
             className={`px-3 sm:px-5 py-2 sm:py-3 text-sm sm:text-base font-semibold transition-all rounded-lg sm:rounded-t-lg ${activeTab === 'orders'
-                ? 'border-b-2 sm:border-b-2 border-indigo-600 text-indigo-600 bg-indigo-50 sm:bg-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 sm:hover:bg-transparent hover:-translate-y-0.5'
+              ? 'border-b-2 sm:border-b-2 border-indigo-600 text-indigo-600 bg-indigo-50 sm:bg-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 sm:hover:bg-transparent hover:-translate-y-0.5'
               }`}
           >
             📦 My Orders
@@ -44,8 +50,8 @@ const CustomerApp = ({ user, showToast }) => {
           <button
             onClick={() => setActiveTab('profile')}
             className={`px-3 sm:px-5 py-2 sm:py-3 text-sm sm:text-base font-semibold transition-all rounded-lg sm:rounded-t-lg ${activeTab === 'profile'
-                ? 'border-b-2 sm:border-b-2 border-indigo-600 text-indigo-600 bg-indigo-50 sm:bg-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 sm:hover:bg-transparent hover:-translate-y-0.5'
+              ? 'border-b-2 sm:border-b-2 border-indigo-600 text-indigo-600 bg-indigo-50 sm:bg-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 sm:hover:bg-transparent hover:-translate-y-0.5'
               }`}
           >
             👤 Profile
@@ -69,6 +75,7 @@ import { Toast, useToast } from './components/Toast';
 // Utilities
 import api from './services/api';
 import { auth } from './utils/cookies';
+import { CartProvider } from './context/CartContext';
 
 // Loading Screen Component
 const LoadingScreen = () => (
@@ -255,7 +262,16 @@ export default function App() {
 
       {/* Main Content - Show view based on role */}
       <main className="container mx-auto px-4 py-4 sm:py-6 flex-1 overflow-hidden flex flex-col">
-        {user.role === 'customer' && <CustomerApp user={user} showToast={{ success, error: showError, info }} />}
+        {user.role === 'customer' && (
+          <CartProvider>
+            <CustomerApp user={user} showToast={{ success, error: showError, info }} />
+            <ChatbotWidget onNavigateToCanteen={() => {
+              // To switch tabs we need to reach the CustomerApp state. 
+              // Let's fire a simple custom event.
+              window.dispatchEvent(new Event('navigate_to_canteen'));
+            }} />
+          </CartProvider>
+        )}
         {user.role === 'shopkeeper' && <ShopkeeperPanel user={user} showToast={{ success, error: showError, info }} />}
         {user.role === 'admin' && <AdminView showToast={{ success, error: showError, info }} />}
       </main>
@@ -267,8 +283,7 @@ export default function App() {
         ))}
       </div>
 
-      {/* Chatbot */}
-      <ChatbotWidget />
+
     </div>
   );
 }
