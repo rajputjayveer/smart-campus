@@ -55,7 +55,7 @@ function OrdersViewComponent({ user, showToast }) {
             console.log('Raw API response:', data);
             console.log('Data type:', typeof data);
             console.log('Is array:', Array.isArray(data));
-            
+
             // Handle both array and object with data property
             let ordersArray = [];
             if (Array.isArray(data)) {
@@ -66,13 +66,13 @@ function OrdersViewComponent({ user, showToast }) {
                 // Try to extract array from object
                 ordersArray = Object.values(data).find(val => Array.isArray(val)) || [];
             }
-            
+
             console.log('Parsed orders array:', ordersArray);
             console.log('Orders count:', ordersArray.length);
             console.log('First order sample:', ordersArray[0]);
-            
+
             setOrders(ordersArray);
-            
+
             if (ordersArray.length === 0) {
                 console.log('No orders found - this is normal if you haven\'t placed any orders yet');
             }
@@ -87,7 +87,7 @@ function OrdersViewComponent({ user, showToast }) {
             setError(errorMessage);
             safeToast.error(errorMessage);
             setOrders([]);
-            
+
             // If it's an auth error, suggest login
             if (errorMessage.includes('authentication') || errorMessage.includes('401')) {
                 console.error('Authentication error - user may need to login again');
@@ -204,12 +204,12 @@ function OrdersViewComponent({ user, showToast }) {
     console.log('Error state:', error);
 
     return (
-        <div className="max-w-6xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold text-gray-800">My Orders</h2>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-full overflow-y-auto no-scrollbar pb-24 lg:pb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">My Orders</h2>
                 <button
                     onClick={loadOrders}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center"
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center justify-center transition-colors text-sm sm:text-base"
                 >
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Refresh
@@ -217,26 +217,26 @@ function OrdersViewComponent({ user, showToast }) {
             </div>
 
             {orders.length === 0 ? (
-                <div className="text-center py-16">
-                    <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-xl text-gray-500">No orders yet</p>
-                    <p className="text-gray-400 mt-2">Start ordering from the canteen!</p>
+                <div className="text-center py-12 sm:py-16">
+                    <Package className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-lg sm:text-xl text-gray-500">No orders yet</p>
+                    <p className="text-gray-400 mt-2 text-sm sm:text-base">Start ordering from the canteen!</p>
                 </div>
             ) : (
                 <div className="space-y-4">
                     {false && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                        <p className="text-green-800 font-medium">
-                            ✅ Found {orders.length} order{orders.length !== 1 ? 's' : ''} - Rendering now...
-                        </p>
-                    </div>
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                            <p className="text-green-800 font-medium">
+                                ✅ Found {orders.length} order{orders.length !== 1 ? 's' : ''} - Rendering now...
+                            </p>
+                        </div>
                     )}
                     {orders.map((order, index) => {
                         if (!order) {
                             console.warn('Null order at index:', index);
                             return null;
                         }
-                        
+
                         // Log order structure for debugging
                         if (index === 0) {
                             console.log('Rendering first order:', order);
@@ -246,7 +246,7 @@ function OrdersViewComponent({ user, showToast }) {
                             console.log('Order items:', order.items);
                             console.log('Full order object:', JSON.stringify(order, null, 2));
                         }
-                        
+
                         const orderId = order.id || order.orderId || `order-${index}`;
                         const orderStatus = order.status || order.orderStatus || 'pending';
                         const orderTimestamp = order.timestamp || order.createdAt || order.date || order.orderDate;
@@ -254,154 +254,159 @@ function OrdersViewComponent({ user, showToast }) {
                             const numeric = typeof value === 'number' ? value : Number(value);
                             return Number.isFinite(numeric) ? numeric : fallback;
                         };
-                        
+
                         const orderTotal = normalizeNumber(order.total || order.totalAmount || order.amount, 0);
                         const orderItems = order.items || order.orderItems || [];
                         const orderStallName = order.stallName || order.stall?.stallName || order.stallName || 'Unknown Stall';
                         const canFeedback = ['ready', 'completed'].includes(orderStatus);
-                        
+
                         return (
-                        <div
-                            key={orderId}
-                            className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-all cursor-pointer border-2 border-gray-200 hover:border-indigo-300"
-                            onClick={() => {
-                                const isCurrentlySelected = selectedOrder && (selectedOrder.id === orderId || selectedOrder.id === order.id);
-                                setSelectedOrder(isCurrentlySelected ? null : order);
-                            }}
-                            style={{ minHeight: '120px' }}
-                        >
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex items-center">
-                                    {getStatusIcon(orderStatus)}
-                                    <div className="ml-3">
-                                        <h3 className="font-bold text-lg">
-                                            Order #{typeof orderId === 'string' && orderId.length > 8 ? orderId.substring(0, 8) : String(orderId) || `#${index + 1}`}
-                                        </h3>
-                                        <p className="text-sm text-gray-500">
-                                            {orderStallName}
-                                        </p>
+                            <div
+                                key={orderId}
+                                className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer border-2 border-gray-200 hover:border-indigo-300"
+                                onClick={() => {
+                                    const isCurrentlySelected = selectedOrder && (selectedOrder.id === orderId || selectedOrder.id === order.id);
+                                    setSelectedOrder(isCurrentlySelected ? null : order);
+                                }}
+                            >
+                                <div className="p-4 sm:p-6">
+                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                                        <div className="flex items-center">
+                                            {getStatusIcon(orderStatus)}
+                                            <div className="ml-3">
+                                                <h3 className="font-bold text-base sm:text-lg">
+                                                    Order #{typeof orderId === 'string' && orderId.length > 8 ? orderId.substring(0, 8) : String(orderId) || `#${index + 1}`}
+                                                </h3>
+                                                <p className="text-sm text-gray-500">
+                                                    {orderStallName}
+                                                </p>
+                                                <p className="text-xs sm:text-sm text-gray-400 mt-1 sm:hidden">
+                                                    {orderTimestamp ? new Date(orderTimestamp).toLocaleString() : 'N/A'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:items-end gap-2">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium self-start sm:self-end ${getStatusColor(orderStatus)}`}>
+                                                {orderStatus}
+                                            </span>
+                                            <p className="text-sm text-gray-500 hidden sm:block">
+                                                {orderTimestamp ? new Date(orderTimestamp).toLocaleString() : 'N/A'}
+                                            </p>
+                                            <p className="text-lg sm:text-xl font-bold text-indigo-600">
+                                                ₹{orderTotal.toFixed(2)}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(orderStatus)}`}>
-                                        {orderStatus}
-                                    </span>
-                                    <p className="text-sm text-gray-500 mt-1">
-                                        {orderTimestamp ? new Date(orderTimestamp).toLocaleString() : 'N/A'}
-                                    </p>
-                                </div>
-                            </div>
 
-                            {selectedOrder && (selectedOrder.id === orderId || selectedOrder.id === order.id) && (
-                                <div className="mt-4 pt-4 border-t space-y-4">
-                                    {/* Pickup Time */}
-                                    {order.pickupTime && (
-                                        <div className="flex items-center text-sm text-gray-600">
-                                            <Clock className="h-4 w-4 mr-2" />
-                                            <span>Pickup Time: <strong>{order.pickupTime}</strong></span>
-                                        </div>
-                                    )}
+                                {selectedOrder && (selectedOrder.id === orderId || selectedOrder.id === order.id) && (
+                                    <div className="mt-4 pt-4 border-t border-gray-100 px-4 sm:px-6 space-y-4 pb-2">
+                                        {/* Pickup Time */}
+                                        {order.pickupTime && (
+                                            <div className="flex items-center text-sm text-gray-600">
+                                                <Clock className="h-4 w-4 mr-2" />
+                                                <span>Pickup Time: <strong>{order.pickupTime}</strong></span>
+                                            </div>
+                                        )}
 
-                                    {/* Payment Status */}
-                                    {order.paymentStatus && (
-                                        <div className="flex items-center text-sm">
-                                            <CreditCard className="h-4 w-4 mr-2" />
-                                            <span className={`font-medium ${
-                                                order.paymentStatus === 'completed' ? 'text-green-600' : 'text-yellow-600'
-                                            }`}>
-                                                Payment: {order.paymentStatus}
-                                            </span>
-                                        </div>
-                                    )}
+                                        {/* Payment Status */}
+                                        {order.paymentStatus && (
+                                            <div className="flex items-center text-sm">
+                                                <CreditCard className="h-4 w-4 mr-2" />
+                                                <span className={`font-medium ${order.paymentStatus === 'completed' ? 'text-green-600' : 'text-yellow-600'
+                                                    }`}>
+                                                    Payment: {order.paymentStatus}
+                                                </span>
+                                            </div>
+                                        )}
 
-                                    {/* Order Items */}
-                                    <div>
-                                        <h4 className="font-semibold mb-2">Order Items:</h4>
-                                        <div className="space-y-2">
-                                            {orderItems && Array.isArray(orderItems) && orderItems.length > 0 ? (
-                                                orderItems.map((item, idx) => {
-                                                    const itemName = item.name || item.itemName || item.productName || 'Item';
-                                                    const itemQuantity = normalizeNumber(item.quantity, 1);
-                                                    const itemPrice = normalizeNumber(item.price || item.itemPrice, 0);
-                                                    return (
-                                                        <div key={item.id || item.itemId || idx} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
-                                                            <div className="flex-1">
-                                                                <span className="font-medium">{itemName}</span>
-                                                                <span className="text-gray-500 ml-2">x {itemQuantity}</span>
+                                        {/* Order Items */}
+                                        <div>
+                                            <h4 className="font-semibold mb-2">Order Items:</h4>
+                                            <div className="space-y-2">
+                                                {orderItems && Array.isArray(orderItems) && orderItems.length > 0 ? (
+                                                    orderItems.map((item, idx) => {
+                                                        const itemName = item.name || item.itemName || item.productName || 'Item';
+                                                        const itemQuantity = normalizeNumber(item.quantity, 1);
+                                                        const itemPrice = normalizeNumber(item.price || item.itemPrice, 0);
+                                                        return (
+                                                            <div key={item.id || item.itemId || idx} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
+                                                                <div className="flex-1">
+                                                                    <span className="font-medium">{itemName}</span>
+                                                                    <span className="text-gray-500 ml-2">x {itemQuantity}</span>
+                                                                </div>
+                                                                <span className="font-medium">₹{(itemPrice * itemQuantity).toFixed(2)}</span>
                                                             </div>
-                                                            <span className="font-medium">₹{(itemPrice * itemQuantity).toFixed(2)}</span>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    <p className="text-sm text-gray-500">No items found in order</p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Order Total */}
+                                        <div className="pt-3 border-t flex justify-between font-bold text-lg">
+                                            <span>Total:</span>
+                                            <span className="text-indigo-600">₹{orderTotal.toFixed(2)}</span>
+                                        </div>
+
+                                        {/* Order Status Timeline */}
+                                        <div className="pt-4 border-t">
+                                            <h4 className="font-semibold mb-3">Order Status:</h4>
+                                            <div className="space-y-2">
+                                                {['pending', 'preparing', 'ready', 'completed'].map((status, index) => {
+                                                    const currentStatusIndex = ['pending', 'preparing', 'ready', 'completed'].indexOf(order.status || 'pending');
+                                                    const isCompleted = index <= currentStatusIndex;
+                                                    const isCurrent = index === currentStatusIndex;
+
+                                                    return (
+                                                        <div key={status} className="flex items-center">
+                                                            <div className={`w-3 h-3 rounded-full mr-3 ${isCompleted ? 'bg-green-500' : 'bg-gray-300'
+                                                                } ${isCurrent ? 'ring-2 ring-green-500 ring-offset-2' : ''}`}></div>
+                                                            <span className={`text-sm ${isCompleted ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
+                                                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                                                            </span>
                                                         </div>
                                                     );
-                                                })
-                                            ) : (
-                                                <p className="text-sm text-gray-500">No items found in order</p>
-                                            )}
+                                                })}
+                                            </div>
                                         </div>
                                     </div>
+                                )}
 
-                                    {/* Order Total */}
-                                    <div className="pt-3 border-t flex justify-between font-bold text-lg">
-                                        <span>Total:</span>
-                                        <span className="text-indigo-600">₹{orderTotal.toFixed(2)}</span>
+                                <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 px-4 sm:px-6 pb-4 sm:pb-6">
+                                    <div>
+                                        <p className="text-sm text-gray-500">Total Amount</p>
+                                        <p className="font-bold text-indigo-600 text-xl">₹{orderTotal.toFixed(2)}</p>
                                     </div>
-
-                                    {/* Order Status Timeline */}
-                                    <div className="pt-4 border-t">
-                                        <h4 className="font-semibold mb-3">Order Status:</h4>
-                                        <div className="space-y-2">
-                                            {['pending', 'preparing', 'ready', 'completed'].map((status, index) => {
-                                                const currentStatusIndex = ['pending', 'preparing', 'ready', 'completed'].indexOf(order.status || 'pending');
-                                                const isCompleted = index <= currentStatusIndex;
-                                                const isCurrent = index === currentStatusIndex;
-                                                
-                                                return (
-                                                    <div key={status} className="flex items-center">
-                                                        <div className={`w-3 h-3 rounded-full mr-3 ${
-                                                            isCompleted ? 'bg-green-500' : 'bg-gray-300'
-                                                        } ${isCurrent ? 'ring-2 ring-green-500 ring-offset-2' : ''}`}></div>
-                                                        <span className={`text-sm ${isCompleted ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
-                                                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                                                        </span>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                                <div>
-                                    <p className="text-sm text-gray-500">Total Amount</p>
-                                    <p className="font-bold text-indigo-600 text-xl">₹{orderTotal.toFixed(2)}</p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    {canFeedback ? (
+                                    <div className="flex items-center gap-3">
+                                        {canFeedback ? (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    openFeedback(order);
+                                                }}
+                                                className="text-sm text-amber-600 hover:underline font-medium"
+                                            >
+                                                Give Feedback
+                                            </button>
+                                        ) : (
+                                            <span className="text-sm text-gray-400">Feedback after ready</span>
+                                        )}
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                openFeedback(order);
+                                                const isSelected = selectedOrder && (selectedOrder.id === orderId || selectedOrder.id === order.id);
+                                                setSelectedOrder(isSelected ? null : order);
                                             }}
-                                            className="text-sm text-amber-600 hover:underline font-medium"
+                                            className="text-sm text-indigo-600 hover:underline font-medium"
                                         >
-                                            Give Feedback
+                                            {selectedOrder && (selectedOrder.id === orderId || selectedOrder.id === order.id) ? 'Hide Details' : 'View Details'}
                                         </button>
-                                    ) : (
-                                        <span className="text-sm text-gray-400">Feedback after ready</span>
-                                    )}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const isSelected = selectedOrder && (selectedOrder.id === orderId || selectedOrder.id === order.id);
-                                            setSelectedOrder(isSelected ? null : order);
-                                        }}
-                                        className="text-sm text-indigo-600 hover:underline font-medium"
-                                    >
-                                        {selectedOrder && (selectedOrder.id === orderId || selectedOrder.id === order.id) ? 'Hide Details' : 'View Details'}
-                                    </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         );
                     })}
                 </div>

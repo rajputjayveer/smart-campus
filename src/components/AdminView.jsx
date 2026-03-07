@@ -11,17 +11,18 @@ export default function AdminView({ showToast }) {
     const [activeTab, setActiveTab] = useState('shopkeepers');
 
     return (
-        <div className="max-w-7xl mx-auto">
-            {/* Admin Navigation */}
-            <div className="mb-6">
+        <div className="max-w-7xl w-full mx-auto flex-1 min-h-0 flex flex-col overflow-hidden transition-all">
+            {/* Admin Header Section (Fixed at top of panel) */}
+            <div className="mb-4 sm:mb-6 flex-shrink-0 px-2 pt-2">
                 <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
 
-                <div className="flex space-x-2 bg-gray-100 rounded-lg p-1">
+                {/* Navigation Tabs - Horizontal Scroll on Mobile */}
+                <div className="flex space-x-2 bg-gray-100/80 backdrop-blur rounded-lg p-1 overflow-x-auto no-scrollbar">
                     <button
                         onClick={() => setActiveTab('shopkeepers')}
-                        className={`flex items-center px-4 py-2 rounded-md transition-all ${activeTab === 'shopkeepers'
-                                ? 'bg-white shadow-md text-indigo-600'
-                                : 'text-gray-600 hover:text-gray-800'
+                        className={`flex items-center px-4 py-2 rounded-md transition-all whitespace-nowrap font-medium ${activeTab === 'shopkeepers'
+                            ? 'bg-white shadow-sm text-indigo-700'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'
                             }`}
                     >
                         <Users className="h-5 w-5 mr-2" />
@@ -30,9 +31,9 @@ export default function AdminView({ showToast }) {
 
                     <button
                         onClick={() => setActiveTab('stalls')}
-                        className={`flex items-center px-4 py-2 rounded-md transition-all ${activeTab === 'stalls'
-                                ? 'bg-white shadow-md text-indigo-600'
-                                : 'text-gray-600 hover:text-gray-800'
+                        className={`flex items-center px-4 py-2 rounded-md transition-all whitespace-nowrap font-medium ${activeTab === 'stalls'
+                            ? 'bg-white shadow-sm text-indigo-700'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'
                             }`}
                     >
                         <Store className="h-5 w-5 mr-2" />
@@ -41,9 +42,9 @@ export default function AdminView({ showToast }) {
 
                     <button
                         onClick={() => setActiveTab('menu')}
-                        className={`flex items-center px-4 py-2 rounded-md transition-all ${activeTab === 'menu'
-                                ? 'bg-white shadow-md text-indigo-600'
-                                : 'text-gray-600 hover:text-gray-800'
+                        className={`flex items-center px-4 py-2 rounded-md transition-all whitespace-nowrap font-medium ${activeTab === 'menu'
+                            ? 'bg-white shadow-sm text-indigo-700'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'
                             }`}
                     >
                         <Settings className="h-5 w-5 mr-2" />
@@ -52,9 +53,9 @@ export default function AdminView({ showToast }) {
 
                     <button
                         onClick={() => setActiveTab('feedback')}
-                        className={`flex items-center px-4 py-2 rounded-md transition-all ${activeTab === 'feedback'
-                                ? 'bg-white shadow-md text-indigo-600'
-                                : 'text-gray-600 hover:text-gray-800'
+                        className={`flex items-center px-4 py-2 rounded-md transition-all whitespace-nowrap font-medium ${activeTab === 'feedback'
+                            ? 'bg-white shadow-sm text-indigo-700'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'
                             }`}
                     >
                         <Lightbulb className="h-5 w-5 mr-2" />
@@ -63,9 +64,9 @@ export default function AdminView({ showToast }) {
 
                     <button
                         onClick={() => setActiveTab('coupons')}
-                        className={`flex items-center px-4 py-2 rounded-md transition-all ${activeTab === 'coupons'
-                                ? 'bg-white shadow-md text-indigo-600'
-                                : 'text-gray-600 hover:text-gray-800'
+                        className={`flex items-center px-4 py-2 rounded-md transition-all whitespace-nowrap font-medium ${activeTab === 'coupons'
+                            ? 'bg-white shadow-sm text-indigo-700'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'
                             }`}
                     >
                         <Ticket className="h-5 w-5 mr-2" />
@@ -74,12 +75,14 @@ export default function AdminView({ showToast }) {
                 </div>
             </div>
 
-            {/* Content based on active tab */}
-            {activeTab === 'shopkeepers' && <AdminShopkeeperPanel />}
-            {activeTab === 'stalls' && <StallManagement showToast={showToast} />}
-            {activeTab === 'menu' && <MenuManagement showToast={showToast} />}
-            {activeTab === 'feedback' && <FeedbackInsights showToast={showToast} />}
-            {activeTab === 'coupons' && <CouponManagement showToast={showToast} />}
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto no-scrollbar px-2 pb-24 lg:pb-8">
+                {activeTab === 'shopkeepers' && <AdminShopkeeperPanel />}
+                {activeTab === 'stalls' && <StallManagement showToast={showToast} />}
+                {activeTab === 'menu' && <MenuManagement showToast={showToast} />}
+                {activeTab === 'feedback' && <FeedbackInsights showToast={showToast} />}
+                {activeTab === 'coupons' && <CouponManagement showToast={showToast} />}
+            </div>
         </div>
     );
 }

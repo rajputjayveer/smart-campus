@@ -1,5 +1,22 @@
-reg menu and chatbot 
 
-also add shopkeeper can create coupen code for that perticuler shope it is not for other shop and admin coupen is for all also make one slidebar on header of each shope which show all availble offer for that shop (that shop+admin)  for each shope alsoo store data in db completely 
 
-per user coupen limit should be alsso both admin and shopkeeper ,  not as if 1 time used then not open also db changes should be automically happen 
+If stock is low → automatic notification to manager
+Prevents sudden “Out of Stock” situations
+Students receive notification when food is ready
+
+1. AI-Powered Chatbot for Order Assistance(reg menu and chatbot )
+Add a floating chat widget for queries like "What's vegan today?" or "Suggest under ₹100," integrating with your menu data for real-time responses.
+
+Implementation: Use Dialogflow or extend Gemini with a WebSocket for chat. In React, add a react-chatbot-kit component in the header. Backend endpoint /api/chat queries MySQL menu table and feeds to AI. Tie into cart for "Add to cart?" actions.
+Common in delivery apps for seamless support.
+
+2. Predictive Inventory & Demand Forecasting
+Forecast popular items to help stall owners prep (e.g., "Expect 50% more burgers on Fridays").
+
+Implementation: Backend cron job queries orders and feedbacks tables, uses simple ML (e.g., Prophet.js or TensorFlow.js) to predict trends. Expose via /api/forecast and show in ShopPanel dashboard. Store predictions in a new MySQL table.
+Essential for optimizing stock in food delivery.
+
+
+
+also bug fix that toster multiple times and when add to cart it should not show the toster again and again
+fix ui of the app   specially when click on payment it break ui 

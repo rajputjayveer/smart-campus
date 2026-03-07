@@ -29,7 +29,7 @@ export default function ProfileView({ user }) {
         .join('') || 'U';
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6">
+        <div className="max-w-6xl mx-auto space-y-6 h-full overflow-y-auto no-scrollbar pb-24 lg:pb-8 px-2">
             <div className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-white/80 p-6 shadow-lg">
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 via-purple-50 to-cyan-50 opacity-70"></div>
                 <div className="relative flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">

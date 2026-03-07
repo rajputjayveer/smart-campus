@@ -17,48 +17,49 @@ import ChatbotWidget from './components/ChatbotWidget';
 // Customer App with Navigation
 const CustomerApp = ({ user, showToast }) => {
   const [activeTab, setActiveTab] = useState('canteen');
-  
+
   return (
-    <>
-      {/* Navigation Tabs */}
-      <div className="mb-6 flex flex-wrap gap-3 border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab('canteen')}
-          className={`px-5 py-3 font-semibold transition-all rounded-t-lg ${
-            activeTab === 'canteen'
-              ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900 hover:-translate-y-0.5'
-          }`}
-        >
-          Canteen
-        </button>
-        <button
-          onClick={() => setActiveTab('orders')}
-          className={`px-5 py-3 font-semibold transition-all rounded-t-lg ${
-            activeTab === 'orders'
-              ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900 hover:-translate-y-0.5'
-          }`}
-        >
-          My Orders
-        </button>
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`px-5 py-3 font-semibold transition-all rounded-t-lg ${
-            activeTab === 'profile'
-              ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900 hover:-translate-y-0.5'
-          }`}
-        >
-          Profile
-        </button>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Navigation Tabs - Mobile Responsive */}
+      <div className="mb-4 sm:mb-6 flex-shrink-0">
+        <div className="flex flex-wrap gap-2 sm:gap-3 border-b border-gray-200 pb-2 sm:pb-0">
+          <button
+            onClick={() => setActiveTab('canteen')}
+            className={`px-3 sm:px-5 py-2 sm:py-3 text-sm sm:text-base font-semibold transition-all rounded-lg sm:rounded-t-lg ${activeTab === 'canteen'
+                ? 'border-b-2 sm:border-b-2 border-indigo-600 text-indigo-600 bg-indigo-50 sm:bg-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 sm:hover:bg-transparent hover:-translate-y-0.5'
+              }`}
+          >
+            🍽️ Canteen
+          </button>
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`px-3 sm:px-5 py-2 sm:py-3 text-sm sm:text-base font-semibold transition-all rounded-lg sm:rounded-t-lg ${activeTab === 'orders'
+                ? 'border-b-2 sm:border-b-2 border-indigo-600 text-indigo-600 bg-indigo-50 sm:bg-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 sm:hover:bg-transparent hover:-translate-y-0.5'
+              }`}
+          >
+            📦 My Orders
+          </button>
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`px-3 sm:px-5 py-2 sm:py-3 text-sm sm:text-base font-semibold transition-all rounded-lg sm:rounded-t-lg ${activeTab === 'profile'
+                ? 'border-b-2 sm:border-b-2 border-indigo-600 text-indigo-600 bg-indigo-50 sm:bg-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 sm:hover:bg-transparent hover:-translate-y-0.5'
+              }`}
+          >
+            👤 Profile
+          </button>
+        </div>
       </div>
 
       {/* Content */}
-      {activeTab === 'canteen' && <CanteenView user={user} showToast={showToast} />}
-      {activeTab === 'orders' && <OrdersView user={user} showToast={showToast} />}
-      {activeTab === 'profile' && <ProfileView user={user} />}
-    </>
+      <div className="flex-1 overflow-hidden relative">
+        {activeTab === 'canteen' && <CanteenView user={user} showToast={showToast} />}
+        {activeTab === 'orders' && <OrdersView user={user} showToast={showToast} />}
+        {activeTab === 'profile' && <ProfileView user={user} />}
+      </div>
+    </div>
   );
 };
 
@@ -212,39 +213,39 @@ export default function App() {
 
   // Main App (Authenticated) - Shows appropriate view based on user role
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-indigo-50 to-cyan-50">
+    <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-violet-50 via-indigo-50 to-cyan-50">
       {/* Enhanced Header */}
-      <header className="sticky top-0 z-40 border-b border-indigo-100 bg-white/80 backdrop-blur-lg shadow-lg">
+      <header className="z-40 border-b border-indigo-100 bg-white/80 backdrop-blur-lg shadow-lg flex-shrink-0">
         <div className="h-1 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600"></div>
-        <nav className="container mx-auto flex flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between">
+        <nav className="container mx-auto flex flex-col gap-4 px-4 py-2 sm:py-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center space-x-3">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-2.5 rounded-2xl shadow-lg">
-              <Utensils className="h-8 w-8 text-white" />
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl shadow-lg">
+              <Utensils className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-tight">
                 SouEats
               </h1>
-              <p className="text-xs font-medium text-gray-500">Smart Campus Food Hub</p>
+              <p className="text-[10px] sm:text-xs font-medium text-gray-500 hidden sm:block">Smart Campus Food Hub</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-3 rounded-2xl border border-indigo-100 bg-white/70 px-3 py-2 shadow-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 font-bold">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-indigo-100 bg-white/70 px-2 sm:px-3 py-1.5 sm:py-2 shadow-sm">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg sm:rounded-xl bg-indigo-100 text-indigo-700 font-bold text-sm sm:text-base">
                 {(user.name || 'U').split(' ').filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase()}
               </div>
-              <div className="leading-tight">
+              <div className="leading-tight hidden sm:block">
                 <p className="text-sm font-semibold text-gray-800">{user.name}</p>
                 <p className="text-xs text-gray-500">{user.email || 'Campus account'}</p>
               </div>
-              <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 uppercase tracking-wide">
+              <span className="rounded-full bg-indigo-50 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-indigo-700 uppercase tracking-wide">
                 {user.role}
               </span>
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-700 font-semibold hover:bg-red-100 transition-all"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm sm:text-base font-semibold hover:bg-red-100 transition-all"
             >
               Logout
             </button>
@@ -253,7 +254,7 @@ export default function App() {
       </header>
 
       {/* Main Content - Show view based on role */}
-      <main className="container mx-auto px-4 py-8 rise-in">
+      <main className="container mx-auto px-4 py-4 sm:py-6 flex-1 overflow-hidden flex flex-col">
         {user.role === 'customer' && <CustomerApp user={user} showToast={{ success, error: showError, info }} />}
         {user.role === 'shopkeeper' && <ShopkeeperPanel user={user} showToast={{ success, error: showError, info }} />}
         {user.role === 'admin' && <AdminView showToast={{ success, error: showError, info }} />}

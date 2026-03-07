@@ -45,11 +45,16 @@ export default function MenuManagement({ showToast }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!formData.stallId && !selectedStall) {
+            showToast.error('Please select a stall');
+            return;
+        }
         try {
             await api.createMenuItem({
                 ...formData,
+                name: formData.itemName,
                 price: parseFloat(formData.price),
-                stallId: selectedStall
+                stallId: formData.stallId || selectedStall
             });
             showToast.success('Menu item created successfully!');
             setFormData({ itemName: '', description: '', price: '', category: '', stallId: '' });
@@ -73,7 +78,7 @@ export default function MenuManagement({ showToast }) {
     };
 
     const filteredItems = selectedStall
-        ? menuItems.filter(item => item.stallId === selectedStall)
+        ? menuItems.filter(item => String(item.stallId) === String(selectedStall))
         : menuItems;
 
     if (loading) {
@@ -147,6 +152,21 @@ export default function MenuManagement({ showToast }) {
                         </div>
 
                         <div>
+                            <label className="block text-sm font-medium mb-1">Stall *</label>
+                            <select
+                                required
+                                value={formData.stallId || selectedStall || ''}
+                                onChange={(e) => setFormData({ ...formData, stallId: e.target.value })}
+                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                            >
+                                <option value="" disabled>Select a Stall</option>
+                                {stalls.map(stall => (
+                                    <option key={stall.id} value={stall.id}>{stall.stallName}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
                             <label className="block text-sm font-medium mb-1">Category *</label>
                             <input
                                 type="text"
@@ -194,11 +214,13 @@ export default function MenuManagement({ showToast }) {
                     <div key={item.id} className="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-all">
                         <div className="flex justify-between items-start mb-2">
                             <div>
-                                <h3 className="font-bold">{item.itemName}</h3>
-                                <p className="text-sm text-gray-500">{item.stallName}</p>
+                                <h3 className="font-bold">{item.name || item.itemName || 'Unnamed Item'}</h3>
+                                <p className="text-sm text-gray-500">
+                                    {item.stallName || stalls.find(s => String(s.id) === String(item.stallId))?.stallName || 'Unknown Stall'}
+                                </p>
                             </div>
                             <button
-                                onClick={() => handleDelete(item.id, item.itemName)}
+                                onClick={() => handleDelete(item.id, item.name || item.itemName)}
                                 className="p-1 text-red-600 hover:bg-red-50 rounded"
                             >
                                 <Trash2 className="h-4 w-4" />

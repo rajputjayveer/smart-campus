@@ -1,7 +1,7 @@
 // src/components/Toast.jsx
 // Toast notification component for user feedback
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CheckCircle, AlertCircle, Info, XCircle, X } from 'lucide-react';
 
 export function Toast({ message, type = 'info', duration = 3000, onClose, index = 0 }) {
@@ -82,9 +82,19 @@ export function Toast({ message, type = 'info', duration = 3000, onClose, index 
 
 export function useToast() {
     const [toasts, setToasts] = useState([]);
+    const recentMessagesRef = useRef({});
 
     const showToast = (message, type = 'info', duration = 3000) => {
-        const id = Date.now();
+        // Prevent duplicate messages within 1000ms
+        const key = `${type}:${message}`;
+        const now = Date.now();
+        
+        if (recentMessagesRef.current[key] && now - recentMessagesRef.current[key] < 1000) {
+            return; // Prevent duplicate toast
+        }
+        
+        recentMessagesRef.current[key] = now;
+        const id = now;
         setToasts(prev => [...prev, { id, message, type, duration }]);
     };
 
