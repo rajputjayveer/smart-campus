@@ -43,15 +43,17 @@ export default function ChatbotWidget({ onNavigateToCanteen }) {
             if (SpeechRecognition) {
                 recognitionRef.current = new SpeechRecognition();
                 recognitionRef.current.continuous = false;
-                recognitionRef.current.interimResults = true;
+                recognitionRef.current.interimResults = false;
                 recognitionRef.current.lang = 'en-US';
 
                 recognitionRef.current.onresult = (event) => {
                     const transcript = Array.from(event.results)
-                        .map(result => result[0])
-                        .map(result => result.transcript)
+                        .map(result => result[0].transcript)
                         .join('');
-                    setInput(transcript);
+                    setIsListening(false);
+                    if (transcript.trim()) {
+                        sendMessage(transcript.trim());
+                    }
                 };
 
                 recognitionRef.current.onend = () => {
