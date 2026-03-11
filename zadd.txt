@@ -1,4 +1,4 @@
-
+content and context based suggestions
 
 If stock is low → automatic notification to manager
 Prevents sudden “Out of Stock” situations
@@ -15,8 +15,3 @@ Forecast popular items to help stall owners prep (e.g., "Expect 50% more burgers
 
 Implementation: Backend cron job queries orders and feedbacks tables, uses simple ML (e.g., Prophet.js or TensorFlow.js) to predict trends. Expose via /api/forecast and show in ShopPanel dashboard. Store predictions in a new MySQL table.
 Essential for optimizing stock in food delivery.
-
-
-
-also bug fix that toster multiple times and when add to cart it should not show the toster again and again
-fix ui of the app   specially when click on payment it break ui 
