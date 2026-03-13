@@ -1,82 +1,57 @@
-// Full Admin Panel - Shopkeeper approvals AND stall management
 import { useState } from 'react';
-import { Store, Users, Settings, Lightbulb, Ticket } from 'lucide-react';
+import { Store, Users, Settings, Lightbulb, Ticket, LayoutDashboard } from 'lucide-react';
 import { AdminShopkeeperPanel } from './AdminShopkeeperPanel';
 import StallManagement from './StallManagement';
 import MenuManagement from './MenuManagement';
 import FeedbackInsights from './FeedbackInsights';
 import CouponManagement from './CouponManagement';
 
+const tabs = [
+    { id: 'shopkeepers', label: 'Shopkeepers', icon: Users },
+    { id: 'stalls',      label: 'Stalls',      icon: Store },
+    { id: 'menu',        label: 'Menu',         icon: Settings },
+    { id: 'feedback',    label: 'Feedback',     icon: Lightbulb },
+    { id: 'coupons',     label: 'Coupons',      icon: Ticket },
+];
+
 export default function AdminView({ showToast }) {
     const [activeTab, setActiveTab] = useState('shopkeepers');
 
     return (
-        <div className="max-w-7xl w-full mx-auto flex-1 min-h-0 flex flex-col overflow-hidden transition-all">
-            {/* Admin Header Section (Fixed at top of panel) */}
-            <div className="mb-4 sm:mb-6 flex-shrink-0 px-2 pt-2">
-                <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
+        <div className="max-w-7xl w-full mx-auto flex-1 min-h-0 flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="mb-4 sm:mb-5 flex-shrink-0 px-1 pt-1">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2.5 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl shadow-lg shadow-indigo-200/50">
+                        <LayoutDashboard className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">Admin Dashboard</h1>
+                        <p className="text-xs text-gray-400 font-medium">Manage everything from one place</p>
+                    </div>
+                </div>
 
-                {/* Navigation Tabs - Horizontal Scroll on Mobile */}
-                <div className="flex space-x-2 bg-gray-100/80 backdrop-blur rounded-lg p-1 overflow-x-auto no-scrollbar">
-                    <button
-                        onClick={() => setActiveTab('shopkeepers')}
-                        className={`flex items-center px-4 py-2 rounded-md transition-all whitespace-nowrap font-medium ${activeTab === 'shopkeepers'
-                            ? 'bg-white shadow-sm text-indigo-700'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'
+                {/* Pill Tabs */}
+                <div className="flex gap-1 p-1 bg-gray-100/80 rounded-2xl overflow-x-auto no-scrollbar w-fit">
+                    {tabs.map(({ id, label, icon: Icon }) => (
+                        <button
+                            key={id}
+                            onClick={() => setActiveTab(id)}
+                            className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
+                                activeTab === id
+                                    ? 'bg-white text-indigo-700 shadow-md shadow-indigo-100/50'
+                                    : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'
                             }`}
-                    >
-                        <Users className="h-5 w-5 mr-2" />
-                        Shopkeeper Approvals
-                    </button>
-
-                    <button
-                        onClick={() => setActiveTab('stalls')}
-                        className={`flex items-center px-4 py-2 rounded-md transition-all whitespace-nowrap font-medium ${activeTab === 'stalls'
-                            ? 'bg-white shadow-sm text-indigo-700'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'
-                            }`}
-                    >
-                        <Store className="h-5 w-5 mr-2" />
-                        Manage Stalls
-                    </button>
-
-                    <button
-                        onClick={() => setActiveTab('menu')}
-                        className={`flex items-center px-4 py-2 rounded-md transition-all whitespace-nowrap font-medium ${activeTab === 'menu'
-                            ? 'bg-white shadow-sm text-indigo-700'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'
-                            }`}
-                    >
-                        <Settings className="h-5 w-5 mr-2" />
-                        Manage Menu
-                    </button>
-
-                    <button
-                        onClick={() => setActiveTab('feedback')}
-                        className={`flex items-center px-4 py-2 rounded-md transition-all whitespace-nowrap font-medium ${activeTab === 'feedback'
-                            ? 'bg-white shadow-sm text-indigo-700'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'
-                            }`}
-                    >
-                        <Lightbulb className="h-5 w-5 mr-2" />
-                        Feedback Insights
-                    </button>
-
-                    <button
-                        onClick={() => setActiveTab('coupons')}
-                        className={`flex items-center px-4 py-2 rounded-md transition-all whitespace-nowrap font-medium ${activeTab === 'coupons'
-                            ? 'bg-white shadow-sm text-indigo-700'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'
-                            }`}
-                    >
-                        <Ticket className="h-5 w-5 mr-2" />
-                        Coupons
-                    </button>
+                        >
+                            <Icon className={`h-4 w-4 ${activeTab === id ? 'text-indigo-600' : ''}`} />
+                            <span className="hidden sm:inline">{label}</span>
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto no-scrollbar px-2 pb-24 lg:pb-8">
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto no-scrollbar px-1 pb-24 lg:pb-8">
                 {activeTab === 'shopkeepers' && <AdminShopkeeperPanel />}
                 {activeTab === 'stalls' && <StallManagement showToast={showToast} />}
                 {activeTab === 'menu' && <MenuManagement showToast={showToast} />}

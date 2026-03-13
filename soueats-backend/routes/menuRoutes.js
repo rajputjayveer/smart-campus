@@ -10,7 +10,7 @@ const {
 } = require('../controllers/menuController');
 const {
     validateMenuItem,
-    validateUUID,
+    validateId,
     validateNumericId
 } = require('../middleware/validation');
 
@@ -21,15 +21,15 @@ router.get('/', getAllMenuItems);
 router.get('/stall/:stallId', validateNumericId('stallId'), getMenuByStall);
 
 // @route   GET /api/menu/:id
-router.get('/:id', validateUUID('id'), getMenuItemById);
+router.get('/:id', validateId('id'), getMenuItemById);
 
 // @route   POST /api/menu
 router.post('/', validateMenuItem, createMenuItem);
 
 // @route   PUT /api/menu/:id
-router.put('/:id', validateUUID('id'), validateMenuItem, updateMenuItem);
+router.put('/:id', validateId('id'), validateMenuItem, updateMenuItem);
 
 // @route   DELETE /api/menu/:id
-router.delete('/:id', validateUUID('id'), deleteMenuItem);
+router.delete('/:id', validateId('id'), deleteMenuItem);
 
 module.exports = router;

@@ -130,6 +130,14 @@ const validateNumericId = (paramName) => (req, res, next) => {
     next();
 };
 
+const validateId = (paramName) => (req, res, next) => {
+    const value = req.params[paramName];
+    if (!value || typeof value !== 'string' || value.trim().length === 0) {
+        return next(new AppError(`Invalid ${paramName} format`, 400));
+    }
+    next();
+};
+
 module.exports = {
     validateStall,
     validateMenuItem,
@@ -137,5 +145,6 @@ module.exports = {
     validateFeedback,
     validateOrderStatus,
     validateUUID,
-    validateNumericId
+    validateNumericId,
+    validateId
 };

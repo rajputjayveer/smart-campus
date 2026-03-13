@@ -273,8 +273,165 @@ const getFeedbackAnalysis = asyncHandler(async (req, res, next) => {
     });
 });
 
+// @desc    Get AI-powered menu recommendations based on cart
+// @route   POST /api/ai/recommendations
+// @access  Public
+const getRecommendations = asyncHandler(async (req, res, next) => {
+    const { cartItems, stallId } = req.body || {};
+
+    if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+        return next(new AppError('Cart items are required', 400));
+    }
+
+    const now = new Date();
+    const hour = now.getHours();
+    let timeSlot = 'morning';
+    if (hour >= 11 && hour < 15) timeSlot = 'lunchtime';
+    else if (hour >= 15 && hour < 18) timeSlot = 'afternoon snack time';
+    else if (hour >= 18) timeSlot = 'evening/dinner time';
+
+    let sameStallItems = [];
+    let crossStallItems = [];
+
+    try {
+        if (stallId) {
+            const [rows] = await pool.execute(
+                `SELECT m.*, s.stallName
+                 FROM menu m
+                 JOIN stalls s ON m.stallId = s.id
+                 WHERE m.stallId = ?
+                 ORDER BY m.popular DESC, m.name ASC`,
+                [stallId]
+            );
+            sameStallItems = rows || [];
+        }
+    } catch (e) {
+        console.error('Failed to fetch same-stall items:', e.message);
+        sameStallItems = [];
+    }
+
+    try {
+        const [allRows] = await pool.execute(
+            `SELECT m.*, s.stallName
+             FROM menu m
+             JOIN stalls s ON m.stallId = s.id
+             ORDER BY m.popular DESC, m.name ASC
+             LIMIT 80`
+        );
+        crossStallItems = (allRows || []).filter(i => !stallId || String(i.stallId) !== String(stallId));
+    } catch (e) {
+        console.error('Failed to fetch cross-stall items:', e.message);
+        crossStallItems = [];
+    }
+
+    const cartItemIds = cartItems.map(i => String(i.id));
+    const sameStallCandidates = sameStallItems.filter(i => !cartItemIds.includes(String(i.id)));
+    const crossStallCandidates = crossStallItems.filter(i => !cartItemIds.includes(String(i.id)));
+
+    const candidates = sameStallCandidates.length >= 2
+        ? sameStallCandidates
+        : [...sameStallCandidates, ...crossStallCandidates];
+
+    if (candidates.length === 0) {
+        return res.json({
+            success: true,
+            data: { recommendations: [], reasoning: 'No additional items available to recommend.' }
+        });
+    }
+
+    const cartDesc = cartItems.map(i => `${i.name} (INR ${i.price})`).join(', ');
+    const candidateDesc = candidates
+        .slice(0, 30)
+        .map(i => `ID=${i.id} | ${i.name} | INR ${i.price} | Stall: ${i.stallName || 'Unknown'} (StallID=${i.stallId})${i.category ? ` | ${i.category}` : ''}${i.popular ? ' [popular]' : ''}`)
+        .join('\n');
+
+    const hasCrossStall = candidates.some(c => String(c.stallId) !== String(stallId));
+
+    const prompt = [
+        'You are a smart canteen recommendation engine.',
+        `Current time of day: ${timeSlot}.`,
+        `The customer currently has these items in their cart: ${cartDesc}.`,
+        hasCrossStall ? 'Note: Some items are from different stalls. Prefer same-stall items when possible, but cross-stall popular picks are welcome too.' : '',
+        '',
+        'Available items to recommend (not already in cart):',
+        candidateDesc,
+        '',
+        'Pick exactly 3-4 items that pair well with the cart items.',
+        'Consider: complementary flavors, popular combos, time of day, and variety.',
+        '',
+        'Respond in this EXACT JSON format and nothing else:',
+        '```json',
+        '{',
+        '  "recommendations": [',
+        '    { "id": "<item_id>", "reason": "<short 8-12 word reason>" }',
+        '  ],',
+        '  "reasoning": "<one friendly sentence explaining the overall suggestion, mention time of day>"',
+        '}',
+        '```'
+    ].filter(Boolean).join('\n');
+
+    const text = await callGemini(prompt);
+
+    let recommendations = [];
+    let reasoning = '';
+
+    const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/\{[\s\S]*"recommendations"[\s\S]*\}/);
+    if (jsonMatch) {
+        try {
+            const raw = jsonMatch[1] || jsonMatch[0];
+            const parsed = JSON.parse(raw);
+            reasoning = parsed.reasoning || '';
+            if (Array.isArray(parsed.recommendations)) {
+                for (const rec of parsed.recommendations) {
+                    const match = candidates.find(c => String(c.id) === String(rec.id));
+                    if (match) {
+                        recommendations.push({
+                            id: match.id,
+                            name: match.name,
+                            price: match.price,
+                            image: match.image || null,
+                            category: match.category || null,
+                            isVeg: match.isVeg,
+                            stallId: match.stallId || stallId,
+                            stallName: match.stallName || null,
+                            sameStall: String(match.stallId) === String(stallId),
+                            reason: rec.reason || ''
+                        });
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Failed to parse recommendation JSON', e);
+        }
+    }
+
+    if (recommendations.length === 0) {
+        const fallback = candidates.filter(c => c.popular).slice(0, 3);
+        if (fallback.length === 0) fallback.push(...candidates.slice(0, 3));
+        recommendations = fallback.map(c => ({
+            id: c.id,
+            name: c.name,
+            price: c.price,
+            image: c.image || null,
+            category: c.category || null,
+            isVeg: c.isVeg,
+            stallId: c.stallId || stallId,
+            stallName: c.stallName || null,
+            sameStall: String(c.stallId) === String(stallId),
+            reason: 'Popular choice!'
+        }));
+        reasoning = `Here are some popular picks for ${timeSlot}!`;
+    }
+
+    res.json({
+        success: true,
+        data: { recommendations, reasoning }
+    });
+});
+
 module.exports = {
     getFeedbackSuggestions,
     chat,
-    getFeedbackAnalysis
+    getFeedbackAnalysis,
+    getRecommendations
 };

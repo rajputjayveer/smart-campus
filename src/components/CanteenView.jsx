@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Store, Search, ShoppingCart, Star, Plus, Minus, Clock, CreditCard, TicketPercent, X, ShoppingBag, Receipt, Shield } from 'lucide-react';
 import api from '../services/api';
 import { useCart } from '../context/CartContext';
+import RecommendationPanel from './RecommendationPanel';
 
 export default function CanteenView({ user, showToast }) {
     const { cart, addToCart: _contextAddToCart, removeFromCart, cartTotal, clearCart } = useCart();
@@ -258,8 +259,17 @@ export default function CanteenView({ user, showToast }) {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 h-full">
+                <div className="space-y-3">
+                    {[1, 2, 3, 4].map(i => <div key={i} className="skeleton h-20 rounded-xl" />)}
+                </div>
+                <div className="md:col-span-2 space-y-4">
+                    <div className="skeleton h-10 w-48 rounded-xl" />
+                    <div className="skeleton h-12 rounded-xl" />
+                    <div className="grid grid-cols-2 gap-3">
+                        {[1, 2, 3, 4].map(i => <div key={i} className="skeleton h-40 rounded-xl" />)}
+                    </div>
+                </div>
             </div>
         );
     }
@@ -268,32 +278,39 @@ export default function CanteenView({ user, showToast }) {
         <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 h-full overflow-hidden pb-4 transition-all duration-300 ${cart.length > 0 ? 'xl:grid-cols-5 lg:grid-cols-4' : 'xl:grid-cols-4 lg:grid-cols-4'}`}>
             {/* Food Stalls Sidebar */}
             <div className="md:col-span-1 xl:col-span-1 lg:col-span-1 order-2 md:order-1 lg:order-1 h-full overflow-y-auto no-scrollbar pb-12 lg:pb-0 pr-1">
-                <div className="">
-                    <h2 className="text-xl lg:text-2xl font-bold mb-4 sticky top-0 bg-transparent py-2 z-10 backdrop-blur-sm">Food Stalls</h2>
-                    <div className="space-y-3">
-                        {stalls.map(stall => (
+                <h2 className="text-lg lg:text-xl font-bold mb-3 sticky top-0 py-2 z-10 backdrop-blur-sm bg-gradient-to-b from-slate-50/90 to-transparent flex items-center gap-2">
+                    <Store className="h-5 w-5 text-indigo-600" />
+                    Food Stalls
+                </h2>
+                <div className="space-y-2">
+                    {stalls.map(stall => {
+                        const isActive = selectedStall?.id === stall.id;
+                        return (
                             <button
                                 key={stall.id}
-                                onClick={() => {
-                                    setSelectedStall(stall);
-                                    loadMenuForStall(stall.id);
-                                }}
-                                className={`w-full p-3 lg:p-4 rounded-xl border-2 transition-all text-left ${selectedStall?.id === stall.id ? 'border-indigo-600 bg-indigo-50 shadow-md' : 'border-gray-200 hover:border-indigo-300 hover:shadow-sm'}`}
+                                onClick={() => { setSelectedStall(stall); loadMenuForStall(stall.id); }}
+                                className={`w-full p-3 rounded-xl border transition-all duration-200 text-left group ${
+                                    isActive
+                                        ? 'border-indigo-500/50 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-md shadow-indigo-100/50 ring-1 ring-indigo-200'
+                                        : 'border-gray-200/60 bg-white/60 hover:bg-white hover:border-gray-300 hover:shadow-sm'
+                                }`}
                             >
-                                <div className="flex items-center">
-                                    <Store className="h-5 w-5 lg:h-6 lg:w-6 text-indigo-600 mr-2 lg:mr-3 flex-shrink-0" />
+                                <div className="flex items-center gap-2.5">
+                                    <div className={`p-2 rounded-lg flex-shrink-0 transition-colors ${isActive ? 'bg-indigo-600 shadow-md' : 'bg-gray-100 group-hover:bg-indigo-100'}`}>
+                                        <Store className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-indigo-600'}`} />
+                                    </div>
                                     <div className="min-w-0 flex-1">
-                                        <h3 className="font-bold text-gray-800 text-sm lg:text-base truncate">{stall.stallName}</h3>
-                                        <p className="text-xs lg:text-sm text-gray-500 truncate">{stall.specialty}</p>
-                                        <div className="flex items-center mt-1">
-                                            <Star className="h-3 w-3 lg:h-4 lg:w-4 text-yellow-500 fill-current flex-shrink-0" />
-                                            <span className="text-xs lg:text-sm ml-1">{stall.rating || 'N/A'}</span>
-                                        </div>
+                                        <h3 className={`font-bold text-sm truncate ${isActive ? 'text-indigo-700' : 'text-gray-800'}`}>{stall.stallName}</h3>
+                                        <p className="text-xs text-gray-400 truncate">{stall.specialty}</p>
+                                    </div>
+                                    <div className="flex items-center gap-0.5 bg-amber-50 px-1.5 py-0.5 rounded-md flex-shrink-0">
+                                        <Star className="h-3 w-3 text-amber-500 fill-current" />
+                                        <span className="text-xs font-semibold text-amber-700">{stall.rating || '-'}</span>
                                     </div>
                                 </div>
                             </button>
-                        ))}
-                    </div>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -301,74 +318,100 @@ export default function CanteenView({ user, showToast }) {
             <div className={`order-1 lg:order-2 h-full overflow-y-auto no-scrollbar pb-24 lg:pb-0 relative px-1 transition-all duration-300 ${cart.length > 0 ? 'md:col-span-2 xl:col-span-3 lg:col-span-2' : 'md:col-span-2 xl:col-span-3 lg:col-span-3'}`}>
                 {selectedStall && (
                     <>
-                        <div className="mb-4 lg:mb-6 sticky top-0 bg-gradient-to-b from-gray-50/95 via-gray-50/90 to-transparent pt-2 pb-4 z-10 backdrop-blur-md">
-                            <h2 className="text-xl lg:text-2xl font-bold mb-1">{selectedStall.stallName}</h2>
-                            <p className="text-gray-600 mb-4 text-sm lg:text-base">{selectedStall.description}</p>
-
-                            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
-                                <p className="text-xs font-semibold text-amber-700 mb-2">Available Offers (Shop + Admin)</p>
-                                {availableOffers.length === 0 ? (
-                                    <p className="text-xs text-amber-700/80">No active offers for this stall right now.</p>
-                                ) : (
-                                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                                        {availableOffers.map((offer) => (
-                                            <div
-                                                key={offer.id}
-                                                className="shrink-0 rounded-lg border border-amber-300 bg-white px-2 lg:px-3 py-2 min-w-[180px] lg:min-w-[200px]"
-                                            >
-                                                <p className="text-xs lg:text-sm font-bold text-amber-800">{offer.code}</p>
-                                                <p className="text-[10px] lg:text-xs text-gray-700">
-                                                    {offer.discountType === 'percentage'
-                                                        ? `${offer.discountValue}% OFF`
-                                                        : `INR ${offer.discountValue} OFF`}
-                                                </p>
-                                                <p className="text-[10px] lg:text-[11px] text-gray-500">
-                                                    Min order: INR {Number(offer.minOrderAmount || 0).toFixed(0)}
-                                                </p>
-                                                <p className="text-[10px] lg:text-[11px] text-gray-500">
-                                                    {offer.stallId ? 'Shop Offer' : 'Admin Offer'}
-                                                </p>
-                                            </div>
-                                        ))}
-                                    </div>
+                        <div className="mb-4 lg:mb-5 sticky top-0 bg-gradient-to-b from-slate-50 via-slate-50/95 to-transparent pt-2 pb-4 z-10 backdrop-blur-md">
+                            <div className="flex items-end justify-between mb-3">
+                                <div>
+                                    <h2 className="text-xl lg:text-2xl font-extrabold text-gray-900">{selectedStall.stallName}</h2>
+                                    <p className="text-gray-500 text-sm">{selectedStall.description}</p>
+                                </div>
+                                {availableOffers.length > 0 && (
+                                    <span className="text-[11px] font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-lg border border-amber-200 flex-shrink-0">
+                                        {availableOffers.length} offer{availableOffers.length > 1 ? 's' : ''}
+                                    </span>
                                 )}
                             </div>
 
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-5 lg:w-5 text-gray-400" />
+                            {availableOffers.length > 0 && (
+                                <div className="mb-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                                    {availableOffers.map((offer) => (
+                                        <div key={offer.id} className="shrink-0 rounded-xl border border-amber-200/60 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-2 min-w-[170px]">
+                                            <div className="flex items-center justify-between mb-0.5">
+                                                <p className="text-xs font-bold text-amber-800 tracking-wide">{offer.code}</p>
+                                                <TicketPercent className="h-3 w-3 text-amber-500" />
+                                            </div>
+                                            <p className="text-sm font-extrabold text-amber-900">
+                                                {offer.discountType === 'percentage' ? `${offer.discountValue}% OFF` : `INR ${offer.discountValue} OFF`}
+                                            </p>
+                                            <p className="text-[10px] text-amber-600 mt-0.5">Min: INR {Number(offer.minOrderAmount || 0).toFixed(0)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="relative group">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
                                 <input
                                     type="text"
-                                    placeholder="Search menu..."
+                                    placeholder="Search menu items..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-9 lg:pl-10 pr-4 py-2 lg:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm lg:text-base"
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 text-sm bg-white/70 placeholder:text-gray-400 transition-all"
                                 />
                             </div>
                         </div>
 
-                        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 transition-all duration-300 ${cart.length > 0 ? 'xl:grid-cols-3' : 'xl:grid-cols-4 lg:grid-cols-3'}`}>
-                            {filteredItems.map((item, index) => (
-                                <div key={item.id || `item-${index}`} className="bg-white rounded-xl shadow-md p-3 lg:p-4 hover:shadow-lg transition-all border border-gray-100">
-                                    {item.image && (
-                                        <img src={item.image} alt={item.name || 'Menu item'} className="w-full h-24 lg:h-32 object-cover rounded-lg mb-3" />
-                                    )}
-                                    <h3 className="font-bold text-base lg:text-lg line-clamp-2">{item.name || 'Unnamed Item'}</h3>
-                                    <p className="text-xs lg:text-sm text-gray-600 mb-2 line-clamp-2">{item.description || 'No description available'}</p>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-lg lg:text-xl font-bold text-indigo-600">INR {item.price || 0}</span>
-                                        <button onClick={() => addToCart(item)} className="px-3 lg:px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center text-sm lg:text-base transition-colors">
-                                            <Plus className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
-                                            Add
-                                        </button>
+                        {cart.length > 0 && (
+                            <RecommendationPanel
+                                cart={cart}
+                                stallId={cart[0]?.stallId || selectedStall?.id}
+                                onAddToCart={addToCart}
+                                showToast={showToast}
+                            />
+                        )}
+
+                        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 transition-all duration-300 ${cart.length > 0 ? 'xl:grid-cols-3' : 'xl:grid-cols-4 lg:grid-cols-3'}`}>
+                            {filteredItems.map((item, index) => {
+                                const cartItem = cart.find(c => c.id === item.id);
+                                return (
+                                    <div key={item.id || `item-${index}`} className="bg-white rounded-2xl p-3 lg:p-4 border border-gray-100 card-hover group relative overflow-hidden">
+                                        {item.popular === 1 && (
+                                            <span className="absolute top-2 right-2 z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">Popular</span>
+                                        )}
+                                        {item.image ? (
+                                            <div className="relative overflow-hidden rounded-xl mb-3">
+                                                <img src={item.image} alt={item.name || 'Menu item'} className="w-full h-28 lg:h-36 object-cover group-hover:scale-105 transition-transform duration-300" />
+                                            </div>
+                                        ) : (
+                                            <div className="w-full h-20 lg:h-24 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl mb-3 flex items-center justify-center">
+                                                <span className="text-3xl opacity-40">🍽️</span>
+                                            </div>
+                                        )}
+                                        <h3 className="font-bold text-sm lg:text-base text-gray-900 line-clamp-2 leading-snug">{item.name || 'Unnamed Item'}</h3>
+                                        <p className="text-xs text-gray-400 mb-3 line-clamp-2 mt-0.5">{item.description || 'Delicious meal'}</p>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-base lg:text-lg font-extrabold text-indigo-600">INR {item.price || 0}</span>
+                                            <button
+                                                onClick={() => addToCart(item)}
+                                                className={`px-3 py-1.5 rounded-lg flex items-center text-sm font-semibold transition-all active:scale-95 ${
+                                                    cartItem
+                                                        ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                                                        : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200/50 hover:shadow-lg'
+                                                }`}
+                                            >
+                                                <Plus className="h-3.5 w-3.5 mr-1" />
+                                                {cartItem ? `Add (${cartItem.quantity})` : 'Add'}
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         {filteredItems.length === 0 && (
-                            <div className="text-center py-8 lg:py-12 text-gray-500">
-                                <div className="text-4xl mb-4">🔍</div>
-                                <p className="text-sm lg:text-base">No items found matching "{searchQuery}"</p>
+                            <div className="text-center py-12 lg:py-16">
+                                <Search className="h-12 w-12 text-gray-200 mx-auto mb-4" />
+                                <p className="text-gray-400 font-medium">No items found matching "{searchQuery}"</p>
+                                <p className="text-gray-300 text-sm mt-1">Try a different search term</p>
                             </div>
                         )}
                     </>
@@ -378,127 +421,130 @@ export default function CanteenView({ user, showToast }) {
             {/* Cart Sidebar - Conditionally Rendered */}
             {cart.length > 0 && (
                 <div className="md:col-span-1 xl:col-span-1 lg:col-span-1 order-3 h-full overflow-hidden hidden md:block rise-in">
-                    <div className="bg-white rounded-xl shadow-lg p-4 lg:p-5 flex flex-col h-full border border-gray-100">
-                        <div className="flex items-center mb-1 flex-shrink-0">
-                            <ShoppingCart className="h-5 w-5 lg:h-6 lg:w-6 text-indigo-600 mr-2" />
-                            <h2 className="text-lg lg:text-xl font-bold">Cart ({cart.length})</h2>
+                    <div className="bg-white rounded-2xl shadow-lg p-4 lg:p-5 flex flex-col h-full border border-gray-100">
+                        {/* Cart Header */}
+                        <div className="flex items-center justify-between mb-3 flex-shrink-0">
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 bg-indigo-100 rounded-lg">
+                                    <ShoppingCart className="h-4 w-4 text-indigo-600" />
+                                </div>
+                                <h2 className="text-base lg:text-lg font-bold text-gray-800">Cart ({cart.length})</h2>
+                            </div>
+                            <button onClick={clearCart} className="text-[11px] text-red-500 hover:text-red-700 font-medium transition-colors">
+                                Clear
+                            </button>
                         </div>
-                        {cart.length > 0 && (() => {
+
+                        {/* Stall Label */}
+                        {(() => {
                             const cartStallId = cart[0]?.stallId;
                             const cartStall = stalls.find(s => s.id === cartStallId);
                             const stallLabel = cartStall?.stallName || cart[0]?.stallName;
                             return stallLabel ? (
-                                <div className="flex items-center gap-1.5 mb-3 px-2 py-1 bg-indigo-50 rounded-lg border border-indigo-100">
+                                <div className="flex items-center gap-1.5 mb-3 px-2.5 py-1.5 bg-indigo-50 rounded-lg border border-indigo-100 flex-shrink-0">
                                     <Store className="h-3 w-3 text-indigo-500 flex-shrink-0" />
                                     <p className="text-xs font-semibold text-indigo-700 truncate">{stallLabel}</p>
                                 </div>
                             ) : null;
                         })()}
 
-                        <div className="flex-1 overflow-y-auto space-y-3 mb-4">
+                        {/* Cart Items */}
+                        <div className="flex-1 overflow-y-auto space-y-2 mb-3 pr-0.5">
                             {cart.map((item, index) => (
-                                <div key={item.id || `cart-${index}`} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                <div key={item.id || `cart-${index}`} className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-xl border border-gray-100">
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-xs lg:text-sm truncate">{item.name || 'Unnamed Item'}</p>
-                                        <p className="text-xs text-gray-500">INR {item.price || 0} each</p>
+                                        <p className="font-semibold text-xs lg:text-sm text-gray-800 truncate">{item.name || 'Unnamed Item'}</p>
+                                        <p className="text-[11px] text-gray-500 mt-0.5">INR {item.price || 0} x {item.quantity} = <span className="font-medium text-indigo-600">INR {((item.price || 0) * item.quantity).toFixed(0)}</span></p>
                                     </div>
-                                    <div className="flex items-center space-x-1 lg:space-x-2 ml-2">
-                                        <button onClick={() => removeFromCart(item.id)} className="p-1 bg-gray-200 rounded hover:bg-gray-300 transition-colors">
-                                            <Minus className="h-3 w-3 lg:h-4 lg:w-4" />
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                        <button onClick={() => removeFromCart(item.id)} className="p-1.5 bg-white border border-gray-200 rounded-lg hover:bg-red-50 hover:border-red-200 transition-colors">
+                                            <Minus className="h-3 w-3 text-gray-600" />
                                         </button>
-                                        <span className="font-bold text-sm lg:text-base min-w-[20px] text-center">{item.quantity}</span>
-                                        <button onClick={() => addToCart(item)} className="p-1 bg-gray-200 rounded hover:bg-gray-300 transition-colors">
-                                            <Plus className="h-3 w-3 lg:h-4 lg:w-4" />
+                                        <span className="font-bold text-sm min-w-[22px] text-center text-gray-800">{item.quantity}</span>
+                                        <button onClick={() => addToCart(item)} className="p-1.5 bg-white border border-gray-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 transition-colors">
+                                            <Plus className="h-3 w-3 text-gray-600" />
                                         </button>
                                     </div>
                                 </div>
                             ))}
                         </div>
 
-                        {cart.length === 0 ? (
-                            <div className="text-center py-6 lg:py-8">
-                                <div className="text-3xl mb-2">🛒</div>
-                                <p className="text-gray-400 text-sm lg:text-base">Your cart is empty</p>
+                        {/* Checkout Section */}
+                        <div className="space-y-3 flex-shrink-0 border-t border-gray-100 pt-3">
+                            {/* Pickup Time */}
+                            <div>
+                                <label className="flex items-center gap-1 text-xs font-medium text-gray-600 mb-1.5">
+                                    <Clock className="h-3 w-3" />
+                                    Pickup Time
+                                </label>
+                                <select value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50">
+                                    <option value="">ASAP (Ready Now)</option>
+                                    <option value="15 min">15 minutes</option>
+                                    <option value="30 min">30 minutes</option>
+                                    <option value="45 min">45 minutes</option>
+                                    <option value="1 hour">1 hour</option>
+                                </select>
                             </div>
-                        ) : (
-                            <>
-                                <div className="space-y-3 mb-4 flex-shrink-0">
-                                    <div>
-                                        <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-2">
-                                            <Clock className="h-3 w-3 lg:h-4 lg:w-4 inline mr-1" />
-                                            Pickup Time
-                                        </label>
-                                        <select value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} className="w-full px-3 lg:px-4 py-2 text-sm lg:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                            <option value="">ASAP (Ready Now)</option>
-                                            <option value="15 min">15 minutes</option>
-                                            <option value="30 min">30 minutes</option>
-                                            <option value="45 min">45 minutes</option>
-                                            <option value="1 hour">1 hour</option>
-                                        </select>
-                                    </div>
 
-                                    <div className="border-t pt-3 lg:pt-4">
-                                        <div className="flex justify-between text-xs lg:text-sm text-gray-600 mb-1">
-                                            <span>Subtotal:</span>
-                                            <span>INR {cartTotal.toFixed(2)}</span>
-                                        </div>
-                                        {couponData && (
-                                            <div className="flex justify-between text-xs lg:text-sm text-green-600 mb-1">
-                                                <span>Discount ({couponData.code}):</span>
-                                                <span>-INR {discountAmount.toFixed(2)}</span>
-                                            </div>
-                                        )}
-                                        <div className="flex justify-between font-bold text-base lg:text-lg pt-2 border-t border-gray-200">
-                                            <span>Total:</span>
-                                            <span className="text-indigo-600">INR {finalTotal.toFixed(2)}</span>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-2">
-                                            <TicketPercent className="h-3 w-3 lg:h-4 lg:w-4 inline mr-1" />
-                                            Coupon Code
-                                        </label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={couponCode}
-                                                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                                                className="flex-1 min-w-0 px-3 py-2 text-sm lg:text-base border border-gray-300 rounded-lg"
-                                                placeholder="Enter coupon"
-                                            />
-                                            <button type="button" onClick={applyCoupon} disabled={applyingCoupon} className="px-3 lg:px-4 py-2 text-xs lg:text-sm bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 disabled:opacity-50 transition-colors whitespace-nowrap font-semibold">
-                                                {applyingCoupon ? '...' : 'Apply'}
-                                            </button>
-                                        </div>
-                                        {couponData && (
-                                            <div className="mt-2 flex items-center justify-between text-xs">
-                                                <span className="text-green-700">Applied: {couponData.code}</span>
-                                                <button type="button" onClick={clearCoupon} className="text-red-600 hover:underline">
-                                                    Remove
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
+                            {/* Coupon */}
+                            <div>
+                                <label className="flex items-center gap-1 text-xs font-medium text-gray-600 mb-1.5">
+                                    <TicketPercent className="h-3 w-3" />
+                                    Coupon Code
+                                </label>
+                                <div className="flex gap-1.5">
+                                    <input
+                                        type="text"
+                                        value={couponCode}
+                                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                        className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50"
+                                        placeholder="Enter code"
+                                    />
+                                    <button type="button" onClick={applyCoupon} disabled={applyingCoupon} className="px-3 py-2 text-xs bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 disabled:opacity-50 transition-colors whitespace-nowrap font-semibold">
+                                        {applyingCoupon ? '...' : 'Apply'}
+                                    </button>
                                 </div>
-                            </>
-                        )}
+                                {couponData && (
+                                    <div className="mt-1.5 flex items-center justify-between text-[11px]">
+                                        <span className="text-green-600 font-medium">Applied: {couponData.code}</span>
+                                        <button type="button" onClick={clearCoupon} className="text-red-500 hover:underline">Remove</button>
+                                    </div>
+                                )}
+                            </div>
 
-                        {cart.length > 0 && (
-                            <button onClick={placeOrder} disabled={processingPayment} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm lg:text-base flex-shrink-0 mt-4">
+                            {/* Price Summary */}
+                            <div className="bg-gray-50 rounded-xl p-3 space-y-1.5">
+                                <div className="flex justify-between text-xs text-gray-600">
+                                    <span>Subtotal</span>
+                                    <span>INR {cartTotal.toFixed(2)}</span>
+                                </div>
+                                {couponData && (
+                                    <div className="flex justify-between text-xs text-green-600">
+                                        <span>Discount ({couponData.code})</span>
+                                        <span>-INR {discountAmount.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between font-bold text-sm lg:text-base pt-1.5 border-t border-gray-200">
+                                    <span className="text-gray-800">Total</span>
+                                    <span className="text-indigo-600">INR {finalTotal.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            {/* Pay Button */}
+                            <button onClick={placeOrder} disabled={processingPayment} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2.5 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm">
                                 {processingPayment ? (
                                     <>
-                                        <div className="animate-spin rounded-full h-4 w-4 lg:h-5 lg:w-5 border-2 border-white border-t-transparent mr-2"></div>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
                                         Processing...
                                     </>
                                 ) : (
                                     <>
-                                        <CreditCard className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
+                                        <CreditCard className="h-4 w-4 mr-2" />
                                         Pay & Place Order
                                     </>
                                 )}
                             </button>
-                        )}
+                        </div>
                     </div>
                 </div>
             )}

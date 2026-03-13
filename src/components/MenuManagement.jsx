@@ -1,6 +1,5 @@
-// Menu Management Component for Admin
 import { useState, useEffect } from 'react';
-import { Utensils, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Utensils, Plus, Trash2, Store, X } from 'lucide-react';
 import api from '../services/api';
 
 export default function MenuManagement({ showToast }) {
@@ -9,236 +8,142 @@ export default function MenuManagement({ showToast }) {
     const [selectedStall, setSelectedStall] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
-    const [formData, setFormData] = useState({
-        itemName: '',
-        description: '',
-        price: '',
-        category: '',
-        stallId: ''
-    });
+    const [formData, setFormData] = useState({ itemName: '', description: '', price: '', category: '', stallId: '' });
 
-    useEffect(() => {
-        loadStalls();
-        loadMenuItems();
-    }, []);
+    useEffect(() => { loadStalls(); loadMenuItems(); }, []);
 
     const loadStalls = async () => {
-        try {
-            const data = await api.getAllStalls();
-            setStalls(data);
-            if (data.length > 0) setSelectedStall(data[0].id);
-        } catch (err) {
-            showToast.error('Failed to load stalls');
-        }
+        try { const data = await api.getAllStalls(); setStalls(data); if (data.length > 0) setSelectedStall(data[0].id); }
+        catch { showToast.error('Failed to load stalls'); }
     };
 
     const loadMenuItems = async () => {
-        try {
-            const data = await api.getAllMenuItems();
-            setMenuItems(data);
-        } catch (err) {
-            showToast.error('Failed to load menu items');
-        } finally {
-            setLoading(false);
-        }
+        try { const data = await api.getAllMenuItems(); setMenuItems(data); }
+        catch { showToast.error('Failed to load menu'); }
+        finally { setLoading(false); }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.stallId && !selectedStall) {
-            showToast.error('Please select a stall');
-            return;
-        }
+        if (!formData.stallId && !selectedStall) { showToast.error('Select a stall'); return; }
         try {
-            await api.createMenuItem({
-                ...formData,
-                name: formData.itemName,
-                price: parseFloat(formData.price),
-                stallId: formData.stallId || selectedStall
-            });
-            showToast.success('Menu item created successfully!');
-            setFormData({ itemName: '', description: '', price: '', category: '', stallId: '' });
-            setShowAddForm(false);
-            loadMenuItems();
-        } catch (err) {
-            showToast.error('Failed to create menu item');
-        }
+            await api.createMenuItem({ ...formData, name: formData.itemName, price: parseFloat(formData.price), stallId: formData.stallId || selectedStall });
+            showToast.success('Menu item created!'); setFormData({ itemName: '', description: '', price: '', category: '', stallId: '' }); setShowAddForm(false); loadMenuItems();
+        } catch { showToast.error('Failed to create'); }
     };
 
     const handleDelete = async (id, name) => {
-        if (!confirm(`Delete "${name}" from menu?`)) return;
-
-        try {
-            await api.deleteMenuItem(id);
-            showToast.success('Menu item deleted');
-            loadMenuItems();
-        } catch (err) {
-            showToast.error('Failed to delete item');
-        }
+        if (!confirm(`Delete "${name}"?`)) return;
+        try { await api.deleteMenuItem(id); showToast.success('Deleted'); loadMenuItems(); }
+        catch { showToast.error('Failed to delete'); }
     };
 
-    const filteredItems = selectedStall
-        ? menuItems.filter(item => String(item.stallId) === String(selectedStall))
-        : menuItems;
+    const filteredItems = selectedStall ? menuItems.filter(i => String(i.stallId) === String(selectedStall)) : menuItems;
 
     if (loading) {
         return (
-            <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
+            <div className="space-y-4">
+                <div className="skeleton h-10 w-56 rounded-xl" />
+                <div className="flex gap-2">{[1,2,3].map(i => <div key={i} className="skeleton h-9 w-24 rounded-lg" />)}</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">{[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-32 rounded-2xl" />)}</div>
             </div>
         );
     }
 
     return (
-        <div>
-            {/* Header */}
-            <div className="flex justify-between items-center mb-6">
+        <div className="space-y-5">
+            <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold">Manage Menu Items</h2>
-                    <p className="text-gray-600 text-sm">Total: {menuItems.length} items</p>
+                    <h2 className="text-2xl font-extrabold text-gray-900">Manage Menu</h2>
+                    <p className="text-sm text-gray-400">{menuItems.length} items across all stalls</p>
                 </div>
-                <button
-                    onClick={() => setShowAddForm(!showAddForm)}
-                    className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                >
-                    <Plus className="h-5 w-5 mr-2" />
-                    Add Menu Item
+                <button onClick={() => setShowAddForm(!showAddForm)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-200/50 transition-all active:scale-95">
+                    {showAddForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                    {showAddForm ? 'Close' : 'Add Item'}
                 </button>
             </div>
 
             {/* Stall Filter */}
-            <div className="mb-6">
-                <label className="block text-sm font-medium mb-2">Filter by Stall:</label>
-                <select
-                    value={selectedStall || ''}
-                    onChange={(e) => setSelectedStall(e.target.value)}
-                    className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="">All Stalls</option>
-                    {stalls.map(stall => (
-                        <option key={stall.id} value={stall.id}>{stall.stallName}</option>
-                    ))}
-                </select>
+            <div className="flex gap-1.5 p-1 bg-gray-100/80 rounded-xl overflow-x-auto no-scrollbar w-fit">
+                <button onClick={() => setSelectedStall(null)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${!selectedStall ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}>
+                    All Stalls
+                </button>
+                {stalls.map(stall => (
+                    <button key={stall.id} onClick={() => setSelectedStall(stall.id)}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${String(selectedStall) === String(stall.id) ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}>
+                        <Store className="h-3 w-3" /> {stall.stallName}
+                    </button>
+                ))}
             </div>
 
-            {/* Add Menu Form */}
             {showAddForm && (
-                <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-                    <h3 className="text-lg font-bold mb-4">Add New Menu Item</h3>
-                    <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-5 slide-up">
+                    <h3 className="text-base font-bold text-gray-800 mb-4">New Menu Item</h3>
+                    <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {[
+                            { label: 'Item Name *', key: 'itemName', placeholder: 'e.g. Chicken Burger', required: true },
+                            { label: 'Price (INR) *', key: 'price', placeholder: '0.00', required: true, type: 'number' },
+                            { label: 'Category *', key: 'category', placeholder: 'e.g. Burgers', required: true },
+                        ].map(({ label, key, placeholder, required, type }) => (
+                            <div key={key}>
+                                <label className="block text-xs font-semibold text-gray-500 mb-1">{label}</label>
+                                <input type={type || 'text'} step={type === 'number' ? '0.01' : undefined} required={required} value={formData[key]}
+                                    onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400" placeholder={placeholder} />
+                            </div>
+                        ))}
                         <div>
-                            <label className="block text-sm font-medium mb-1">Item Name *</label>
-                            <input
-                                type="text"
-                                required
-                                value={formData.itemName}
-                                onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                placeholder="e.g. Chicken Burger"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Price (₹) *</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                required
-                                value={formData.price}
-                                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                placeholder="0.00"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Stall *</label>
-                            <select
-                                required
-                                value={formData.stallId || selectedStall || ''}
-                                onChange={(e) => setFormData({ ...formData, stallId: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
-                            >
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">Stall *</label>
+                            <select required value={formData.stallId || selectedStall || ''} onChange={(e) => setFormData({ ...formData, stallId: e.target.value })}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500/30">
                                 <option value="" disabled>Select a Stall</option>
-                                {stalls.map(stall => (
-                                    <option key={stall.id} value={stall.id}>{stall.stallName}</option>
-                                ))}
+                                {stalls.map(s => <option key={s.id} value={s.id}>{s.stallName}</option>)}
                             </select>
                         </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Category *</label>
-                            <input
-                                type="text"
-                                required
-                                value={formData.category}
-                                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                placeholder="e.g. Burgers"
-                            />
+                        <div className="sm:col-span-2">
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">Description</label>
+                            <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500/30 resize-none" rows="2" placeholder="Describe the item..." />
                         </div>
-
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium mb-1">Description</label>
-                            <textarea
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                rows="2"
-                                placeholder="Describe the item..."
-                            ></textarea>
-                        </div>
-
-                        <div className="col-span-2 flex space-x-3">
-                            <button
-                                type="submit"
-                                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                            >
-                                Add Item
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setShowAddForm(false)}
-                                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                            >
-                                Cancel
-                            </button>
+                        <div className="sm:col-span-2 flex gap-2">
+                            <button type="submit" className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 shadow-md transition-all">Add Item</button>
+                            <button type="button" onClick={() => setShowAddForm(false)} className="px-5 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200">Cancel</button>
                         </div>
                     </form>
                 </div>
             )}
 
-            {/* Menu Items Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredItems.map(item => (
-                    <div key={item.id} className="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-all">
-                        <div className="flex justify-between items-start mb-2">
-                            <div>
-                                <h3 className="font-bold">{item.name || item.itemName || 'Unnamed Item'}</h3>
-                                <p className="text-sm text-gray-500">
-                                    {item.stallName || stalls.find(s => String(s.id) === String(item.stallId))?.stallName || 'Unknown Stall'}
-                                </p>
+            {filteredItems.length === 0 ? (
+                <div className="text-center py-16">
+                    <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center"><Utensils className="h-10 w-10 text-gray-300" /></div>
+                    <p className="text-lg font-semibold text-gray-400">No menu items{selectedStall ? ' for this stall' : ''}</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {filteredItems.map(item => (
+                        <div key={item.id} className="bg-white rounded-2xl border border-gray-100 p-4 card-hover group">
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="font-bold text-sm text-gray-900 truncate">{item.name || item.itemName || 'Unnamed Item'}</h3>
+                                    <p className="text-[11px] text-gray-400 flex items-center gap-1">
+                                        <Store className="h-3 w-3" />
+                                        {item.stallName || stalls.find(s => String(s.id) === String(item.stallId))?.stallName || 'Unknown'}
+                                    </p>
+                                </div>
+                                <button onClick={() => handleDelete(item.id, item.name || item.itemName)}
+                                    className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                </button>
                             </div>
-                            <button
-                                onClick={() => handleDelete(item.id, item.name || item.itemName)}
-                                className="p-1 text-red-600 hover:bg-red-50 rounded"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </button>
+                            {item.description && <p className="text-xs text-gray-400 mb-3 line-clamp-2">{item.description}</p>}
+                            <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                                <span className="text-base font-extrabold text-indigo-600">INR {item.price}</span>
+                                {item.category && <span className="text-[10px] font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{item.category}</span>}
+                            </div>
                         </div>
-                        <p className="text-xs text-gray-600 mb-2">{item.description}</p>
-                        <div className="flex justify-between items-center">
-                            <span className="text-lg font-bold text-indigo-600">₹{item.price}</span>
-                            <span className="text-xs bg-gray-100 px-2 py-1 rounded">{item.category}</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {filteredItems.length === 0 && (
-                <div className="text-center py-12 text-gray-500">
-                    <Utensils className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                    <p>No menu items found{selectedStall ? ' for this stall' : ''}.</p>
+                    ))}
                 </div>
             )}
         </div>

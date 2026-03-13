@@ -40,16 +40,18 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword }) {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-violet-100 via-indigo-100 to-cyan-100 flex items-center justify-center p-4">
-            <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-8 w-full max-w-md border border-white/50">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-cyan-50 flex items-center justify-center p-4 relative overflow-hidden">
+            <div className="absolute top-1/3 left-1/4 w-64 h-64 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+            <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 w-full max-w-md border border-white/50">
                 <div className="text-center mb-8">
-                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full p-4 w-16 h-16 mx-auto mb-4">
+                    <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 rounded-2xl p-4 w-16 h-16 mx-auto mb-4 shadow-xl shadow-indigo-200/50">
                         <UserCircle className="h-8 w-8 text-white" />
                     </div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    <h1 className="text-3xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
                         Welcome Back
                     </h1>
-                    <p className="text-gray-600 mt-2">Sign in to SouEats</p>
+                    <p className="text-gray-500 mt-2">Sign in to SouEats</p>
                 </div>
 
                 {error && (
@@ -264,16 +266,18 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }) {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-violet-100 via-indigo-100 to-cyan-100 flex items-center justify-center p-4">
-            <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-8 w-full max-w-md border border-white/50">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-cyan-50 flex items-center justify-center p-4 relative overflow-hidden">
+            <div className="absolute top-1/4 right-1/3 w-64 h-64 bg-cyan-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+            <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 w-full max-w-md border border-white/50 max-h-[95vh] overflow-y-auto no-scrollbar">
                 <div className="text-center mb-8">
-                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full p-4 w-16 h-16 mx-auto mb-4">
+                    <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 rounded-2xl p-4 w-16 h-16 mx-auto mb-4 shadow-xl shadow-indigo-200/50">
                         <User className="h-8 w-8 text-white" />
                     </div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    <h1 className="text-3xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
                         Join SouEats
                     </h1>
-                    <p className="text-gray-600 mt-2">Create your account</p>
+                    <p className="text-gray-500 mt-2">Create your account</p>
                 </div>
 
                 {error && (
@@ -286,27 +290,29 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }) {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Role Selection */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">I am a:</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">I am a:</label>
                         <div className="grid grid-cols-2 gap-3">
                             <button
                                 type="button"
                                 onClick={() => handleChange('role', 'customer')}
-                                className={`py-3 px-4 rounded-xl border-2 font-medium transition-all ${formData.role === 'customer'
-                                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                                    : 'border-gray-200 hover:border-gray-300'
+                                className={`py-3 px-4 rounded-xl border-2 font-semibold transition-all flex items-center justify-center gap-2 ${formData.role === 'customer'
+                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-100'
+                                    : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                                     }`}
                             >
-                                🧑 Customer
+                                <UserCircle className={`h-5 w-5 ${formData.role === 'customer' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                                Customer
                             </button>
                             <button
                                 type="button"
                                 onClick={() => handleChange('role', 'shopkeeper')}
-                                className={`py-3 px-4 rounded-xl border-2 font-medium transition-all ${formData.role === 'shopkeeper'
-                                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                                    : 'border-gray-200 hover:border-gray-300'
+                                className={`py-3 px-4 rounded-xl border-2 font-semibold transition-all flex items-center justify-center gap-2 ${formData.role === 'shopkeeper'
+                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-100'
+                                    : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                                     }`}
                             >
-                                🏪 Shopkeeper
+                                <Store className={`h-5 w-5 ${formData.role === 'shopkeeper' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                                Shopkeeper
                             </button>
                         </div>
                     </div>

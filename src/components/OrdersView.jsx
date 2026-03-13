@@ -1,7 +1,15 @@
-// Orders View - Customer order history and tracking
 import { useState, useEffect } from 'react';
-import { Package, Clock, CheckCircle, XCircle, RefreshCw, MapPin, CreditCard, Star } from 'lucide-react';
+import { Package, Clock, CheckCircle, XCircle, RefreshCw, CreditCard, Star, ChevronDown, ChevronUp, MessageSquare, X } from 'lucide-react';
 import api from '../services/api';
+
+const STATUS_CONFIG = {
+    pending:   { color: 'bg-amber-100 text-amber-700 border-amber-200', dot: 'bg-amber-500', barColor: 'from-amber-400 to-amber-500' },
+    preparing: { color: 'bg-blue-100 text-blue-700 border-blue-200',   dot: 'bg-blue-500',  barColor: 'from-blue-400 to-blue-500' },
+    ready:     { color: 'bg-emerald-100 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500', barColor: 'from-emerald-400 to-emerald-500' },
+    completed: { color: 'bg-green-100 text-green-700 border-green-200', dot: 'bg-green-500', barColor: 'from-green-400 to-green-600' },
+    cancelled: { color: 'bg-red-100 text-red-700 border-red-200',     dot: 'bg-red-500',   barColor: 'from-red-400 to-red-500' },
+};
+const TIMELINE_STEPS = ['pending', 'preparing', 'ready', 'completed'];
 
 function OrdersViewComponent({ user, showToast }) {
     const [orders, setOrders] = useState([]);
@@ -9,40 +17,18 @@ function OrdersViewComponent({ user, showToast }) {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [error, setError] = useState(null);
     const [feedbackOrder, setFeedbackOrder] = useState(null);
-    const [feedbackData, setFeedbackData] = useState({
-        itemName: '',
-        rating: 5,
-        comments: ''
-    });
+    const [feedbackData, setFeedbackData] = useState({ itemName: '', rating: 5, comments: '' });
     const [submittingFeedback, setSubmittingFeedback] = useState(false);
+    const [hoveredStar, setHoveredStar] = useState(0);
 
-    // Safe toast function
     const safeToast = {
-        error: (msg) => {
-            if (showToast && showToast.error) {
-                showToast.error(msg);
-            } else {
-                console.error('Toast error:', msg);
-                alert(msg);
-            }
-        },
-        success: (msg) => {
-            if (showToast && showToast.success) {
-                showToast.success(msg);
-            } else {
-                console.log('Toast success:', msg);
-            }
-        }
+        error: (msg) => showToast?.error?.(msg),
+        success: (msg) => showToast?.success?.(msg),
     };
 
     useEffect(() => {
-        if (!user) {
-            setError('User not found. Please login again.');
-            setLoading(false);
-            return;
-        }
+        if (!user) { setError('User not found. Please login again.'); setLoading(false); return; }
         loadOrders();
-        // Refresh orders every 30 seconds
         const interval = setInterval(loadOrders, 30000);
         return () => clearInterval(interval);
     }, [user]);
@@ -50,147 +36,65 @@ function OrdersViewComponent({ user, showToast }) {
     const loadOrders = async () => {
         try {
             setError(null);
-            console.log('Loading orders...');
             const data = await api.getUserOrders();
-            console.log('Raw API response:', data);
-            console.log('Data type:', typeof data);
-            console.log('Is array:', Array.isArray(data));
-
-            // Handle both array and object with data property
-            let ordersArray = [];
-            if (Array.isArray(data)) {
-                ordersArray = data;
-            } else if (data && data.data && Array.isArray(data.data)) {
-                ordersArray = data.data;
-            } else if (data && typeof data === 'object') {
-                // Try to extract array from object
-                ordersArray = Object.values(data).find(val => Array.isArray(val)) || [];
-            }
-
-            console.log('Parsed orders array:', ordersArray);
-            console.log('Orders count:', ordersArray.length);
-            console.log('First order sample:', ordersArray[0]);
-
-            setOrders(ordersArray);
-
-            if (ordersArray.length === 0) {
-                console.log('No orders found - this is normal if you haven\'t placed any orders yet');
-            }
+            let arr = [];
+            if (Array.isArray(data)) arr = data;
+            else if (data?.data && Array.isArray(data.data)) arr = data.data;
+            else if (data && typeof data === 'object') arr = Object.values(data).find(v => Array.isArray(v)) || [];
+            setOrders(arr);
         } catch (err) {
-            console.error('Error loading orders:', err);
-            console.error('Error details:', {
-                message: err.message,
-                stack: err.stack,
-                name: err.name
-            });
-            const errorMessage = err.message || 'Failed to load orders';
-            setError(errorMessage);
-            safeToast.error(errorMessage);
+            const msg = err.message || 'Failed to load orders';
+            setError(msg.includes('authentication') || msg.includes('401') ? 'Please login again to view your orders' : msg);
+            safeToast.error(msg);
             setOrders([]);
-
-            // If it's an auth error, suggest login
-            if (errorMessage.includes('authentication') || errorMessage.includes('401')) {
-                console.error('Authentication error - user may need to login again');
-                setError('Please login again to view your orders');
-            }
         } finally {
             setLoading(false);
         }
     };
 
-    const getStatusIcon = (status) => {
-        if (!status) return <Package className="h-5 w-5 text-gray-500" />;
-        switch (status.toLowerCase()) {
-            case 'pending':
-                return <Clock className="h-5 w-5 text-yellow-500" />;
-            case 'preparing':
-                return <RefreshCw className="h-5 w-5 text-blue-500 animate-spin" />;
-            case 'ready':
-            case 'completed':
-                return <CheckCircle className="h-5 w-5 text-green-500" />;
-            case 'cancelled':
-                return <XCircle className="h-5 w-5 text-red-500" />;
-            default:
-                return <Package className="h-5 w-5 text-gray-500" />;
-        }
-    };
-
-    const getStatusColor = (status) => {
-        if (!status) return 'bg-gray-100 text-gray-800';
-        switch (status.toLowerCase()) {
-            case 'pending':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'preparing':
-                return 'bg-blue-100 text-blue-800';
-            case 'ready':
-            case 'completed':
-                return 'bg-green-100 text-green-800';
-            case 'cancelled':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
-    };
-
     const openFeedback = (order) => {
-        const items = order?.items && Array.isArray(order.items) ? order.items : [];
-        const firstItemName = items[0]?.name || items[0]?.itemName || items[0]?.productName || 'General';
+        const items = Array.isArray(order?.items) ? order.items : [];
         setFeedbackOrder(order);
-        setFeedbackData({
-            itemName: firstItemName,
-            rating: 5,
-            comments: ''
-        });
+        setFeedbackData({ itemName: items[0]?.name || items[0]?.itemName || 'General', rating: 5, comments: '' });
     };
 
     const submitFeedback = async () => {
         if (!feedbackOrder) return;
-        if (!feedbackData.comments.trim()) {
-            safeToast.error('Please enter feedback comments');
-            return;
-        }
-
-        const orderStallName = feedbackOrder.stallName || feedbackOrder.stall?.stallName || 'Unknown Stall';
-        const itemName = feedbackData.itemName || 'General';
-
+        if (!feedbackData.comments.trim()) { safeToast.error('Please enter feedback comments'); return; }
         try {
             setSubmittingFeedback(true);
             await api.createFeedback({
-                stall: orderStallName,
-                item: itemName,
+                stall: feedbackOrder.stallName || feedbackOrder.stall?.stallName || 'Unknown Stall',
+                item: feedbackData.itemName || 'General',
                 rating: feedbackData.rating,
                 comments: feedbackData.comments,
                 userId: user?.id || null
             });
             safeToast.success('Feedback submitted. Thank you!');
             setFeedbackOrder(null);
-        } catch (err) {
-            safeToast.error('Failed to submit feedback');
-        } finally {
-            setSubmittingFeedback(false);
-        }
+        } catch { safeToast.error('Failed to submit feedback'); }
+        finally { setSubmittingFeedback(false); }
     };
+
+    const normalizeNumber = (v, fb = 0) => { const n = Number(v); return Number.isFinite(n) ? n : fb; };
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
-                <p className="mt-4 text-gray-600">Loading orders...</p>
+            <div className="max-w-4xl mx-auto space-y-4 px-4">
+                <div className="skeleton h-10 w-48 rounded-xl" />
+                {[1, 2, 3].map(i => <div key={i} className="skeleton h-28 rounded-2xl" />)}
             </div>
         );
     }
 
-    if (error && !loading) {
+    if (error) {
         return (
-            <div className="max-w-6xl mx-auto">
-                <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-                    <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-red-800 mb-2">Error Loading Orders</h3>
-                    <p className="text-red-600 mb-4">{error}</p>
-                    <button
-                        onClick={loadOrders}
-                        className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all"
-                    >
+            <div className="max-w-4xl mx-auto px-4">
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
+                    <XCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-bold text-red-800 mb-2">Error Loading Orders</h3>
+                    <p className="text-red-600 text-sm mb-5">{error}</p>
+                    <button onClick={loadOrders} className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold text-sm shadow-lg">
                         Try Again
                     </button>
                 </div>
@@ -198,288 +102,202 @@ function OrdersViewComponent({ user, showToast }) {
         );
     }
 
-    console.log('Rendering OrdersView - orders:', orders);
-    console.log('Orders length:', orders.length);
-    console.log('Loading state:', loading);
-    console.log('Error state:', error);
-
     return (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-full overflow-y-auto no-scrollbar pb-24 lg:pb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">My Orders</h2>
-                <button
-                    onClick={loadOrders}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center justify-center transition-colors text-sm sm:text-base"
-                >
-                    <RefreshCw className="h-4 w-4 mr-2" />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-full overflow-y-auto no-scrollbar pb-24 lg:pb-8">
+            <div className="flex items-center justify-between mb-5">
+                <h2 className="text-2xl font-extrabold text-gray-900">My Orders</h2>
+                <button onClick={loadOrders} className="px-3.5 py-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 flex items-center gap-1.5 transition-all text-sm font-medium text-gray-600 hover:text-gray-800 shadow-sm">
+                    <RefreshCw className="h-3.5 w-3.5" />
                     Refresh
                 </button>
             </div>
 
             {orders.length === 0 ? (
-                <div className="text-center py-12 sm:py-16">
-                    <Package className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-lg sm:text-xl text-gray-500">No orders yet</p>
-                    <p className="text-gray-400 mt-2 text-sm sm:text-base">Start ordering from the canteen!</p>
+                <div className="text-center py-16">
+                    <div className="w-20 h-20 mx-auto mb-5 bg-gray-100 rounded-2xl flex items-center justify-center">
+                        <Package className="h-10 w-10 text-gray-300" />
+                    </div>
+                    <p className="text-lg font-semibold text-gray-400">No orders yet</p>
+                    <p className="text-gray-300 text-sm mt-1">Start ordering from the canteen!</p>
                 </div>
             ) : (
-                <div className="space-y-4">
-                    {false && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                            <p className="text-green-800 font-medium">
-                                ✅ Found {orders.length} order{orders.length !== 1 ? 's' : ''} - Rendering now...
-                            </p>
-                        </div>
-                    )}
+                <div className="space-y-3">
                     {orders.map((order, index) => {
-                        if (!order) {
-                            console.warn('Null order at index:', index);
-                            return null;
-                        }
-
-                        // Log order structure for debugging
-                        if (index === 0) {
-                            console.log('Rendering first order:', order);
-                            console.log('Order keys:', Object.keys(order));
-                            console.log('Order ID:', order.id);
-                            console.log('Order status:', order.status);
-                            console.log('Order items:', order.items);
-                            console.log('Full order object:', JSON.stringify(order, null, 2));
-                        }
-
+                        if (!order) return null;
                         const orderId = order.id || order.orderId || `order-${index}`;
-                        const orderStatus = order.status || order.orderStatus || 'pending';
-                        const orderTimestamp = order.timestamp || order.createdAt || order.date || order.orderDate;
-                        const normalizeNumber = (value, fallback = 0) => {
-                            const numeric = typeof value === 'number' ? value : Number(value);
-                            return Number.isFinite(numeric) ? numeric : fallback;
-                        };
-
-                        const orderTotal = normalizeNumber(order.total || order.totalAmount || order.amount, 0);
-                        const orderItems = order.items || order.orderItems || [];
-                        const orderStallName = order.stallName || order.stall?.stallName || order.stallName || 'Unknown Stall';
-                        const canFeedback = ['ready', 'completed'].includes(orderStatus);
+                        const status = (order.status || order.orderStatus || 'pending').toLowerCase();
+                        const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+                        const timestamp = order.timestamp || order.createdAt || order.date;
+                        const total = normalizeNumber(order.total || order.totalAmount, 0);
+                        const items = order.items || order.orderItems || [];
+                        const stallName = order.stallName || order.stall?.stallName || 'Unknown Stall';
+                        const canFeedback = ['ready', 'completed'].includes(status);
+                        const isExpanded = selectedOrder && (selectedOrder.id === orderId || selectedOrder.id === order.id);
 
                         return (
-                            <div
-                                key={orderId}
-                                className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer border-2 border-gray-200 hover:border-indigo-300"
-                                onClick={() => {
-                                    const isCurrentlySelected = selectedOrder && (selectedOrder.id === orderId || selectedOrder.id === order.id);
-                                    setSelectedOrder(isCurrentlySelected ? null : order);
-                                }}
-                            >
-                                <div className="p-4 sm:p-6">
-                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                                        <div className="flex items-center">
-                                            {getStatusIcon(orderStatus)}
-                                            <div className="ml-3">
-                                                <h3 className="font-bold text-base sm:text-lg">
-                                                    Order #{typeof orderId === 'string' && orderId.length > 8 ? orderId.substring(0, 8) : String(orderId) || `#${index + 1}`}
-                                                </h3>
-                                                <p className="text-sm text-gray-500">
-                                                    {orderStallName}
-                                                </p>
-                                                <p className="text-xs sm:text-sm text-gray-400 mt-1 sm:hidden">
-                                                    {orderTimestamp ? new Date(orderTimestamp).toLocaleString() : 'N/A'}
-                                                </p>
+                            <div key={orderId} className="bg-white rounded-2xl border border-gray-100 overflow-hidden card-hover">
+                                {/* Status bar accent */}
+                                <div className={`h-1 bg-gradient-to-r ${config.barColor}`} />
+
+                                {/* Order header */}
+                                <div
+                                    className="p-4 sm:p-5 cursor-pointer"
+                                    onClick={() => setSelectedOrder(isExpanded ? null : order)}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${config.color}`}>
+                                                {status === 'preparing' ? <RefreshCw className="h-4 w-4 animate-spin" /> :
+                                                 status === 'completed' || status === 'ready' ? <CheckCircle className="h-4 w-4" /> :
+                                                 status === 'cancelled' ? <XCircle className="h-4 w-4" /> :
+                                                 <Clock className="h-4 w-4" />}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <h3 className="font-bold text-sm sm:text-base text-gray-900">
+                                                        #{typeof orderId === 'string' && orderId.length > 8 ? orderId.substring(0, 8) : orderId}
+                                                    </h3>
+                                                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${config.color}`}>
+                                                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-gray-400 mt-0.5">{stallName} {timestamp ? `· ${new Date(timestamp).toLocaleDateString()}` : ''}</p>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col sm:items-end gap-2">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium self-start sm:self-end ${getStatusColor(orderStatus)}`}>
-                                                {orderStatus}
-                                            </span>
-                                            <p className="text-sm text-gray-500 hidden sm:block">
-                                                {orderTimestamp ? new Date(orderTimestamp).toLocaleString() : 'N/A'}
-                                            </p>
-                                            <p className="text-lg sm:text-xl font-bold text-indigo-600">
-                                                ₹{orderTotal.toFixed(2)}
-                                            </p>
+                                        <div className="flex items-center gap-3">
+                                            <p className="text-lg font-extrabold text-indigo-600">INR {total.toFixed(0)}</p>
+                                            {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
                                         </div>
                                     </div>
                                 </div>
 
-                                {selectedOrder && (selectedOrder.id === orderId || selectedOrder.id === order.id) && (
-                                    <div className="mt-4 pt-4 border-t border-gray-100 px-4 sm:px-6 space-y-4 pb-2">
-                                        {/* Pickup Time */}
-                                        {order.pickupTime && (
-                                            <div className="flex items-center text-sm text-gray-600">
-                                                <Clock className="h-4 w-4 mr-2" />
-                                                <span>Pickup Time: <strong>{order.pickupTime}</strong></span>
-                                            </div>
-                                        )}
-
-                                        {/* Payment Status */}
-                                        {order.paymentStatus && (
-                                            <div className="flex items-center text-sm">
-                                                <CreditCard className="h-4 w-4 mr-2" />
-                                                <span className={`font-medium ${order.paymentStatus === 'completed' ? 'text-green-600' : 'text-yellow-600'
-                                                    }`}>
-                                                    Payment: {order.paymentStatus}
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {/* Order Items */}
-                                        <div>
-                                            <h4 className="font-semibold mb-2">Order Items:</h4>
-                                            <div className="space-y-2">
-                                                {orderItems && Array.isArray(orderItems) && orderItems.length > 0 ? (
-                                                    orderItems.map((item, idx) => {
-                                                        const itemName = item.name || item.itemName || item.productName || 'Item';
-                                                        const itemQuantity = normalizeNumber(item.quantity, 1);
-                                                        const itemPrice = normalizeNumber(item.price || item.itemPrice, 0);
-                                                        return (
-                                                            <div key={item.id || item.itemId || idx} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
-                                                                <div className="flex-1">
-                                                                    <span className="font-medium">{itemName}</span>
-                                                                    <span className="text-gray-500 ml-2">x {itemQuantity}</span>
-                                                                </div>
-                                                                <span className="font-medium">₹{(itemPrice * itemQuantity).toFixed(2)}</span>
-                                                            </div>
-                                                        );
-                                                    })
-                                                ) : (
-                                                    <p className="text-sm text-gray-500">No items found in order</p>
-                                                )}
-                                            </div>
+                                {/* Expanded details */}
+                                {isExpanded && (
+                                    <div className="px-4 sm:px-5 pb-5 space-y-4 border-t border-gray-100 pt-4 slide-up">
+                                        {/* Items */}
+                                        <div className="space-y-1.5">
+                                            {items.map((item, idx) => (
+                                                <div key={item.id || idx} className="flex justify-between text-sm bg-gray-50 px-3 py-2 rounded-lg">
+                                                    <span className="text-gray-700">{item.name || item.itemName || 'Item'} <span className="text-gray-400">x{normalizeNumber(item.quantity, 1)}</span></span>
+                                                    <span className="font-semibold text-gray-800">INR {(normalizeNumber(item.price, 0) * normalizeNumber(item.quantity, 1)).toFixed(0)}</span>
+                                                </div>
+                                            ))}
                                         </div>
 
-                                        {/* Order Total */}
-                                        <div className="pt-3 border-t flex justify-between font-bold text-lg">
-                                            <span>Total:</span>
-                                            <span className="text-indigo-600">₹{orderTotal.toFixed(2)}</span>
-                                        </div>
-
-                                        {/* Order Status Timeline */}
-                                        <div className="pt-4 border-t">
-                                            <h4 className="font-semibold mb-3">Order Status:</h4>
-                                            <div className="space-y-2">
-                                                {['pending', 'preparing', 'ready', 'completed'].map((status, index) => {
-                                                    const currentStatusIndex = ['pending', 'preparing', 'ready', 'completed'].indexOf(order.status || 'pending');
-                                                    const isCompleted = index <= currentStatusIndex;
-                                                    const isCurrent = index === currentStatusIndex;
-
-                                                    return (
-                                                        <div key={status} className="flex items-center">
-                                                            <div className={`w-3 h-3 rounded-full mr-3 ${isCompleted ? 'bg-green-500' : 'bg-gray-300'
-                                                                } ${isCurrent ? 'ring-2 ring-green-500 ring-offset-2' : ''}`}></div>
-                                                            <span className={`text-sm ${isCompleted ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
-                                                                {status.charAt(0).toUpperCase() + status.slice(1)}
-                                                            </span>
+                                        {/* Timeline */}
+                                        <div className="flex items-center gap-1 pt-2">
+                                            {TIMELINE_STEPS.map((step, i) => {
+                                                const currentIdx = TIMELINE_STEPS.indexOf(status);
+                                                const done = i <= currentIdx;
+                                                return (
+                                                    <div key={step} className="flex items-center flex-1">
+                                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 transition-all ${
+                                                            done ? 'bg-green-500 text-white shadow-sm' : 'bg-gray-200 text-gray-400'
+                                                        }`}>
+                                                            {done ? '✓' : i + 1}
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
+                                                        {i < TIMELINE_STEPS.length - 1 && (
+                                                            <div className={`flex-1 h-0.5 mx-1 rounded-full ${i < currentIdx ? 'bg-green-400' : 'bg-gray-200'}`} />
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="flex justify-between text-[10px] text-gray-400 px-1">
+                                            {TIMELINE_STEPS.map(s => <span key={s} className="capitalize">{s}</span>)}
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div className="flex justify-end pt-2">
+                                            {canFeedback && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); openFeedback(order); }}
+                                                    className="flex items-center gap-1.5 px-4 py-2 bg-amber-50 text-amber-700 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-all border border-amber-200"
+                                                >
+                                                    <MessageSquare className="h-3.5 w-3.5" />
+                                                    Give Feedback
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 )}
-
-                                <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 px-4 sm:px-6 pb-4 sm:pb-6">
-                                    <div>
-                                        <p className="text-sm text-gray-500">Total Amount</p>
-                                        <p className="font-bold text-indigo-600 text-xl">₹{orderTotal.toFixed(2)}</p>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        {canFeedback ? (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    openFeedback(order);
-                                                }}
-                                                className="text-sm text-amber-600 hover:underline font-medium"
-                                            >
-                                                Give Feedback
-                                            </button>
-                                        ) : (
-                                            <span className="text-sm text-gray-400">Feedback after ready</span>
-                                        )}
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                const isSelected = selectedOrder && (selectedOrder.id === orderId || selectedOrder.id === order.id);
-                                                setSelectedOrder(isSelected ? null : order);
-                                            }}
-                                            className="text-sm text-indigo-600 hover:underline font-medium"
-                                        >
-                                            {selectedOrder && (selectedOrder.id === orderId || selectedOrder.id === order.id) ? 'Hide Details' : 'View Details'}
-                                        </button>
-                                    </div>
-                                </div>
                             </div>
                         );
                     })}
                 </div>
             )}
 
+            {/* Feedback Modal */}
             {feedbackOrder && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-                    <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6">
-                        <h3 className="text-xl font-bold text-gray-800 mb-2">Order Feedback</h3>
-                        <p className="text-sm text-gray-500 mb-4">
-                            {feedbackOrder.stallName || feedbackOrder.stall?.stallName || 'Stall'}
-                        </p>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 fade-in">
+                    <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden slide-up">
+                        <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-5 text-white">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-lg font-bold">Order Feedback</h3>
+                                    <p className="text-amber-100 text-sm">{feedbackOrder.stallName || feedbackOrder.stall?.stallName || 'Stall'}</p>
+                                </div>
+                                <button onClick={() => setFeedbackOrder(null)} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors">
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+                        </div>
 
-                        <div className="space-y-4">
+                        <div className="p-5 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium mb-1">Item</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Item</label>
                                 <select
                                     value={feedbackData.itemName}
                                     onChange={(e) => setFeedbackData(prev => ({ ...prev, itemName: e.target.value }))}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400"
                                 >
                                     <option value="General">General</option>
                                     {(feedbackOrder.items || []).map((item, idx) => {
-                                        const name = item.name || item.itemName || item.productName || `Item ${idx + 1}`;
-                                        return (
-                                            <option key={item.id || idx} value={name}>
-                                                {name}
-                                            </option>
-                                        );
+                                        const name = item.name || item.itemName || `Item ${idx + 1}`;
+                                        return <option key={item.id || idx} value={name}>{name}</option>;
                                     })}
                                 </select>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium mb-1">Rating</label>
-                                <div className="flex items-center gap-2">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Rating</label>
+                                <div className="flex items-center gap-1">
                                     {[1, 2, 3, 4, 5].map(star => (
                                         <button
                                             type="button"
                                             key={star}
                                             onClick={() => setFeedbackData(prev => ({ ...prev, rating: star }))}
-                                            className={`p-1 ${feedbackData.rating >= star ? 'text-yellow-500' : 'text-gray-300'}`}
+                                            onMouseEnter={() => setHoveredStar(star)}
+                                            onMouseLeave={() => setHoveredStar(0)}
+                                            className="p-0.5 transition-transform hover:scale-110"
                                         >
-                                            <Star className="h-6 w-6 fill-current" />
+                                            <Star className={`h-7 w-7 transition-colors ${
+                                                (hoveredStar || feedbackData.rating) >= star
+                                                    ? 'text-amber-400 fill-current'
+                                                    : 'text-gray-200'
+                                            }`} />
                                         </button>
                                     ))}
-                                    <span className="text-sm text-gray-600">{feedbackData.rating} / 5</span>
+                                    <span className="text-sm text-gray-500 ml-2 font-medium">{feedbackData.rating}/5</span>
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium mb-1">Comments</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Comments</label>
                                 <textarea
                                     value={feedbackData.comments}
                                     onChange={(e) => setFeedbackData(prev => ({ ...prev, comments: e.target.value }))}
-                                    rows="4"
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    rows="3"
+                                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 resize-none"
                                     placeholder="Share your experience..."
-                                ></textarea>
+                                />
                             </div>
 
-                            <div className="flex justify-end gap-3">
-                                <button
-                                    onClick={() => setFeedbackOrder(null)}
-                                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                                >
+                            <div className="flex gap-3 pt-2">
+                                <button onClick={() => setFeedbackOrder(null)} className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-semibold text-sm transition-colors">
                                     Cancel
                                 </button>
-                                <button
-                                    onClick={submitFeedback}
-                                    disabled={submittingFeedback}
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                                >
+                                <button onClick={submitFeedback} disabled={submittingFeedback} className="flex-1 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 font-semibold text-sm disabled:opacity-50 transition-all shadow-lg">
                                     {submittingFeedback ? 'Submitting...' : 'Submit Feedback'}
                                 </button>
                             </div>
@@ -491,22 +309,17 @@ function OrdersViewComponent({ user, showToast }) {
     );
 }
 
-// Error boundary wrapper
 export default function OrdersView({ user, showToast }) {
     try {
         return <OrdersViewComponent user={user} showToast={showToast} />;
     } catch (error) {
-        console.error('OrdersView error:', error);
         return (
-            <div className="max-w-6xl mx-auto p-6">
-                <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-                    <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-red-800 mb-2">Something went wrong</h3>
-                    <p className="text-red-600 mb-4">{error.message || 'An unexpected error occurred'}</p>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all"
-                    >
+            <div className="max-w-4xl mx-auto p-6">
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
+                    <XCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-bold text-red-800 mb-2">Something went wrong</h3>
+                    <p className="text-red-600 text-sm mb-4">{error.message || 'An unexpected error occurred'}</p>
+                    <button onClick={() => window.location.reload()} className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold text-sm">
                         Reload Page
                     </button>
                 </div>

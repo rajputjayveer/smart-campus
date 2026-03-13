@@ -237,6 +237,13 @@ class ApiService {
         return this.request('/ai/feedback-analysis');
     }
 
+    async getRecommendations(cartItems, stallId) {
+        return this.request('/ai/recommendations', {
+            method: 'POST',
+            body: JSON.stringify({ cartItems, stallId }),
+        });
+    }
+
     // Password Management APIs
     async forgotPassword(email) {
         const response = await fetch(`${API_BASE}/auth/forgot-password`, {
