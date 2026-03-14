@@ -167,7 +167,7 @@ export default function ChatbotWidget({ onNavigateToCanteen }) {
             )}
 
             {open && (
-                <div className="fixed bottom-6 right-6 z-50 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="fixed bottom-6 right-6 z-50 w-80 sm:w-96 max-h-[calc(100vh-3rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
                     {/* Header */}
                     <div className="bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-between p-4 text-white">
                         <div>
@@ -198,8 +198,8 @@ export default function ChatbotWidget({ onNavigateToCanteen }) {
                     </div>
 
                     {/* Chat Area */}
-                    <div className="p-4 space-y-4 flex-1 bg-gray-50 flex flex-col h-[400px]">
-                        <div className="flex-1 overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-gray-300">
+                    <div className="p-4 space-y-4 flex-1 min-h-0 bg-gray-50 flex flex-col">
+                        <div className="flex-1 min-h-0 overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-gray-300">
                             {messages.map((msg, idx) => (
                                 <div
                                     key={idx}
@@ -207,13 +207,13 @@ export default function ChatbotWidget({ onNavigateToCanteen }) {
                                         }`}
                                 >
                                     <div
-                                        className={`text-sm px-4 py-2.5 rounded-2xl max-w-[85%] ${msg.role === 'user'
+                                        className={`text-sm px-4 py-2.5 rounded-2xl max-w-[85%] break-words overflow-hidden ${msg.role === 'user'
                                             ? 'bg-indigo-600 text-white rounded-br-sm shadow-md'
                                             : 'bg-white text-gray-800 border border-gray-100 rounded-bl-sm shadow-sm'
                                             }`}
                                     >
                                         {msg.role === 'assistant' ? (
-                                            <div className="prose prose-sm prose-indigo max-w-none">
+                                            <div className="prose prose-sm prose-indigo max-w-none break-words [&_pre]:overflow-x-auto [&_table]:overflow-x-auto">
                                                 <ReactMarkdown
                                                     remarkPlugins={[remarkGfm]}
                                                     components={{

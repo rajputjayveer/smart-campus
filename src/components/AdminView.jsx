@@ -32,7 +32,7 @@ export default function AdminView({ showToast }) {
                 </div>
 
                 {/* Pill Tabs */}
-                <div className="flex gap-1 p-1 bg-gray-100/80 rounded-2xl overflow-x-auto no-scrollbar w-fit">
+                <div className="flex gap-1 p-1 bg-gray-100/80 rounded-2xl overflow-x-auto w-full max-w-full">
                     {tabs.map(({ id, label, icon: Icon }) => (
                         <button
                             key={id}
@@ -51,7 +51,7 @@ export default function AdminView({ showToast }) {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto no-scrollbar px-1 pb-24 lg:pb-8">
+            <div className="flex-1 overflow-y-auto px-1 pb-24 lg:pb-8">
                 {activeTab === 'shopkeepers' && <AdminShopkeeperPanel />}
                 {activeTab === 'stalls' && <StallManagement showToast={showToast} />}
                 {activeTab === 'menu' && <MenuManagement showToast={showToast} />}

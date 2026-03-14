@@ -51,32 +51,36 @@ export default function MenuManagement({ showToast }) {
     }
 
     return (
-        <div className="space-y-5">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-2xl font-extrabold text-gray-900">Manage Menu</h2>
-                    <p className="text-sm text-gray-400">{menuItems.length} items across all stalls</p>
+        <div className="flex flex-col h-full overflow-hidden">
+            <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur-sm -mx-1 px-1 py-2 space-y-4 shadow-sm border-b border-gray-100/50">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-extrabold text-gray-900">Manage Menu</h2>
+                        <p className="text-sm text-gray-400">{menuItems.length} items across all stalls</p>
+                    </div>
+                    <button onClick={() => setShowAddForm(!showAddForm)}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-200/50 transition-all active:scale-95">
+                        {showAddForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                        {showAddForm ? 'Close' : 'Add Item'}
+                    </button>
                 </div>
-                <button onClick={() => setShowAddForm(!showAddForm)}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-200/50 transition-all active:scale-95">
-                    {showAddForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                    {showAddForm ? 'Close' : 'Add Item'}
-                </button>
+
+                {/* Stall Filter */}
+                <div className="flex gap-1.5 p-1 bg-gray-100/80 rounded-xl overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent w-full">
+                    <button onClick={() => setSelectedStall(null)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold swallow-all transition-all whitespace-nowrap ${!selectedStall ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}>
+                        All Stalls
+                    </button>
+                    {stalls.map(stall => (
+                        <button key={stall.id} onClick={() => setSelectedStall(stall.id)}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${String(selectedStall) === String(stall.id) ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}>
+                            <Store className="h-3 w-3" /> {stall.stallName}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {/* Stall Filter */}
-            <div className="flex gap-1.5 p-1 bg-gray-100/80 rounded-xl overflow-x-auto no-scrollbar w-fit">
-                <button onClick={() => setSelectedStall(null)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${!selectedStall ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}>
-                    All Stalls
-                </button>
-                {stalls.map(stall => (
-                    <button key={stall.id} onClick={() => setSelectedStall(stall.id)}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${String(selectedStall) === String(stall.id) ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}>
-                        <Store className="h-3 w-3" /> {stall.stallName}
-                    </button>
-                ))}
-            </div>
+            <div className="flex-1 overflow-y-auto py-4 space-y-5 px-1">
 
             {showAddForm && (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-5 slide-up">
@@ -146,6 +150,7 @@ export default function MenuManagement({ showToast }) {
                     ))}
                 </div>
             )}
+            </div>
         </div>
     );
 }

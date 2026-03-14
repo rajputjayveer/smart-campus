@@ -66,7 +66,7 @@ export function AdminShopkeeperPanel() {
             )}
 
             {/* Tabs */}
-            <div className="flex gap-1 p-1 bg-gray-100/80 rounded-xl w-fit mb-5">
+            <div className="flex gap-1 p-1 bg-gray-100/80 rounded-xl w-full max-w-full overflow-x-auto mb-5">
                 <button onClick={() => setActiveTab('pending')}
                     className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'pending' ? 'bg-white text-amber-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}>
                     <Clock className="h-4 w-4" /> Pending <span className="ml-0.5 text-[11px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{pendingShopkeepers.length}</span>
