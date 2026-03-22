@@ -7,7 +7,8 @@ const {
     updateOrderStatus,
     updateOrderItemStatus,
     cancelOrder,
-    getMyOrders
+    getMyOrders,
+    verifyOtp
 } = require('../controllers/orderController');
 const {
     validateOrder,
@@ -43,5 +44,8 @@ router.put(
 
 // @route   DELETE /api/orders/:id (Cancel order)
 router.delete('/:id', validateUUID('id'), cancelOrder);
+
+// @route   POST /api/orders/:id/verify-otp
+router.post('/:id/verify-otp', validateUUID('id'), verifyOtp);
 
 module.exports = router;

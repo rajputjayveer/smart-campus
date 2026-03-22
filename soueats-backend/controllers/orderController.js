@@ -146,6 +146,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
     }
 
     const id = uuidv4();
+    const pickupOtp = Math.floor(1000 + Math.random() * 9000).toString();
     const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     // Determine payment status based on paymentId
@@ -156,20 +157,20 @@ const createOrder = asyncHandler(async (req, res, next) => {
         if (includePaymentFields) {
             return pool.execute(
                 includeStallId
-                    ? 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, stallId, paymentStatus, paymentId) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?, ?, ?)'
-                    : 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, paymentStatus, paymentId) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?, ?)',
+                    ? 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, pickupOtp, stallId, paymentStatus, paymentId) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?, ?, ?, ?)'
+                    : 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, pickupOtp, paymentStatus, paymentId) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?, ?, ?)',
                 includeStallId
-                    ? [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, orderStallId, paymentStatus, paymentId || null]
-                    : [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, paymentStatus, paymentId || null]
+                    ? [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, pickupOtp, orderStallId, paymentStatus, paymentId || null]
+                    : [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, pickupOtp, paymentStatus, paymentId || null]
             );
         }
         return pool.execute(
             includeStallId
-                ? 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, stallId) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?)'
-                : 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status) VALUES (?, ?, ?, ?, ?, ?, ?, "pending")',
+                ? 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, pickupOtp, stallId) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?, ?)'
+                : 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, pickupOtp) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?)',
             includeStallId
-                ? [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, orderStallId]
-                : [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp]
+                ? [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, pickupOtp, orderStallId]
+                : [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, pickupOtp]
         );
     };
 
@@ -177,20 +178,20 @@ const createOrder = asyncHandler(async (req, res, next) => {
         if (includePaymentFields) {
             return pool.execute(
                 includeStallId
-                    ? 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, stallId, paymentStatus, paymentId) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?, ?, ?)'
-                    : 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, paymentStatus, paymentId) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?, ?)',
+                    ? 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, pickupOtp, stallId, paymentStatus, paymentId) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?, ?, ?, ?)'
+                    : 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, pickupOtp, paymentStatus, paymentId) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?, ?, ?)',
                 includeStallId
-                    ? [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, orderStallId, paymentStatus, paymentId || null]
-                    : [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, paymentStatus, paymentId || null]
+                    ? [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, pickupOtp, orderStallId, paymentStatus, paymentId || null]
+                    : [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, pickupOtp, paymentStatus, paymentId || null]
             );
         }
         return pool.execute(
             includeStallId
-                ? 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, stallId) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?)'
-                : 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status) VALUES (?, ?, ?, ?, ?, ?, ?, "pending")',
+                ? 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, pickupOtp, stallId) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?, ?)'
+                : 'INSERT INTO orders (id, userId, user, items, total, pickupTime, timestamp, status, pickupOtp) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?)',
             includeStallId
-                ? [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, orderStallId]
-                : [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp]
+                ? [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, pickupOtp, orderStallId]
+                : [id, user.id, JSON.stringify(user), JSON.stringify(items), finalTotal, pickupTime || null, timestamp, pickupOtp]
         );
     };
 
@@ -247,6 +248,16 @@ const createOrder = asyncHandler(async (req, res, next) => {
         }
     }
 
+    // Emit socket notification for shopkeeper
+    const io = req.app.get('socketio');
+    if (io && orderStallId) {
+        io.to(`stall_${orderStallId}`).emit('new_order', {
+            id,
+            total: finalTotal,
+            timestamp
+        });
+    }
+
     res.status(201).json({
         success: true,
         data: {
@@ -260,6 +271,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
             pickupTime: pickupTime || null,
             timestamp,
             status: 'pending',
+            pickupOtp: pickupOtp, // Include in response for testing/initial view
             paymentStatus,
             paymentId: paymentId || null
         }
@@ -281,6 +293,19 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
     }
 
     await pool.execute('UPDATE orders SET status = ? WHERE id = ?', [status, id]);
+
+    // Emit socket notification for user
+    const [orderInfo] = await pool.execute('SELECT userId FROM orders WHERE id = ?', [id]);
+    if (orderInfo.length > 0) {
+        const io = req.app.get('socketio');
+        if (io) {
+            io.to(`user_${orderInfo[0].userId}`).emit('order_status_update', {
+                id,
+                status,
+                message: `Your order is now ${status}`
+            });
+        }
+    }
 
     res.status(200).json({
         success: true,
@@ -413,6 +438,55 @@ const getMyOrders = asyncHandler(async (req, res, next) => {
     });
 });
 
+// @desc    Verify OTP for order pickup
+// @route   POST /api/orders/:id/verify-otp
+// @access  Admin/Shopkeeper
+const verifyOtp = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const { otp } = req.body;
+
+    if (!otp) {
+        return next(new AppError('OTP is required', 400));
+    }
+
+    const [rows] = await pool.execute('SELECT pickupOtp, status FROM orders WHERE id = ?', [id]);
+
+    if (rows.length === 0) {
+        return next(new AppError(`Order not found with id: ${id}`, 404));
+    }
+
+    const order = rows[0];
+
+    if (order.status === 'completed') {
+        return next(new AppError('Order is already marked as completed', 400));
+    }
+
+    if (order.pickupOtp !== otp) {
+        return next(new AppError('Invalid OTP. Please check with the customer.', 400));
+    }
+
+    await pool.execute('UPDATE orders SET status = "completed" WHERE id = ?', [id]);
+
+    // Emit socket notification for user
+    const [orderInfo] = await pool.execute('SELECT userId FROM orders WHERE id = ?', [id]);
+    if (orderInfo.length > 0) {
+        const io = req.app.get('socketio');
+        if (io) {
+            io.to(`user_${orderInfo[0].userId}`).emit('order_status_update', {
+                id,
+                status: 'completed',
+                message: 'Your order has been collected!'
+            });
+        }
+    }
+
+    res.status(200).json({
+        success: true,
+        message: 'Order verified and completed successfully',
+        data: { id, status: 'completed' }
+    });
+});
+
 // @desc    Cancel order
 // @route   DELETE /api/orders/:id
 // @access  User (own orders)/Admin
@@ -445,5 +519,6 @@ module.exports = {
     updateOrderStatus,
     updateOrderItemStatus,
     cancelOrder,
-    getMyOrders
+    getMyOrders,
+    verifyOtp
 };

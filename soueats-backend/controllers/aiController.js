@@ -279,29 +279,42 @@ const getFeedbackAnalysis = asyncHandler(async (req, res, next) => {
 const getRecommendations = asyncHandler(async (req, res, next) => {
     const { cartItems, stallId } = req.body || {};
 
-    if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
-        return next(new AppError('Cart items are required', 400));
-    }
+    const itemsInCart = Array.isArray(cartItems) ? cartItems : [];
 
     const now = new Date();
     const hour = now.getHours();
+    const month = now.getMonth(); // 0-11
+    
     let timeSlot = 'morning';
     if (hour >= 11 && hour < 15) timeSlot = 'lunchtime';
     else if (hour >= 15 && hour < 18) timeSlot = 'afternoon snack time';
     else if (hour >= 18) timeSlot = 'evening/dinner time';
+
+    // Basic season detection for India
+    let season = 'All';
+    if (month >= 2 && month <= 5) season = 'Summer';
+    else if (month >= 6 && month <= 8) season = 'Monsoon';
+    else if (month >= 9 || month <= 1) season = 'Winter';
 
     let sameStallItems = [];
     let crossStallItems = [];
 
     try {
         if (stallId) {
+            // Prioritize current season heavily
             const [rows] = await pool.execute(
                 `SELECT m.*, s.stallName
                  FROM menu m
                  JOIN stalls s ON m.stallId = s.id
                  WHERE m.stallId = ?
-                 ORDER BY m.popular DESC, m.name ASC`,
-                [stallId]
+                 ORDER BY 
+                    CASE 
+                        WHEN m.season = ? THEN 0 
+                        WHEN m.season = 'All' THEN 1 
+                        ELSE 2 
+                    END, 
+                    m.popular DESC, m.name ASC`,
+                [stallId, season]
             );
             sameStallItems = rows || [];
         }
@@ -315,8 +328,15 @@ const getRecommendations = asyncHandler(async (req, res, next) => {
             `SELECT m.*, s.stallName
              FROM menu m
              JOIN stalls s ON m.stallId = s.id
-             ORDER BY m.popular DESC, m.name ASC
-             LIMIT 80`
+             ORDER BY 
+                CASE 
+                    WHEN m.season = ? THEN 0 
+                    WHEN m.season = 'All' THEN 1 
+                    ELSE 2 
+                END, 
+                m.popular DESC, m.name ASC
+             LIMIT 100`,
+            [season]
         );
         crossStallItems = (allRows || []).filter(i => !stallId || String(i.stallId) !== String(stallId));
     } catch (e) {
@@ -339,24 +359,31 @@ const getRecommendations = asyncHandler(async (req, res, next) => {
         });
     }
 
-    const cartDesc = cartItems.map(i => `${i.name} (INR ${i.price})`).join(', ');
+    // const cartDesc = cartItems.map(i => `${i.name} (INR ${i.price})`).join(', ');
     const candidateDesc = candidates
         .slice(0, 30)
-        .map(i => `ID=${i.id} | ${i.name} | INR ${i.price} | Stall: ${i.stallName || 'Unknown'} (StallID=${i.stallId})${i.category ? ` | ${i.category}` : ''}${i.popular ? ' [popular]' : ''}`)
+        .map(i => `ID=${i.id} | ${i.name} | INR ${i.price} | Stall: ${i.stallName || 'Unknown'} (StallID=${i.stallId})${i.category ? ` | ${i.category}` : ''}${i.popular ? ' [popular]' : ''}${i.season ? ` | Season: ${i.season}` : ''}`)
         .join('\n');
 
     const hasCrossStall = candidates.some(c => String(c.stallId) !== String(stallId));
 
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayName = days[now.getDay()];
+
     const prompt = [
         'You are a smart canteen recommendation engine.',
+        `Current day: ${dayName}.`,
         `Current time of day: ${timeSlot}.`,
-        `The customer currently has these items in their cart: ${cartDesc}.`,
+        `Current season: ${season}.`,
+        itemsInCart.length > 0 ? `The customer currently has these items in their cart: ${itemsInCart.map(i => `${i.name} (INR ${i.price})`).join(', ')}.` : 'The customer has an empty cart. Suggest some popular or seasonal starters/drinks.',
         hasCrossStall ? 'Note: Some items are from different stalls. Prefer same-stall items when possible, but cross-stall popular picks are welcome too.' : '',
+        '',
+        `IMPORTANT: It is currently ${season}. You MUST ONLY recommend items that are tagged with "${season}" or "All". DO NOT recommend items tagged with other seasons.`,
         '',
         'Available items to recommend (not already in cart):',
         candidateDesc,
         '',
-        'Pick exactly 3-4 items that pair well with the cart items.',
+        'Pick exactly 3-4 items as "Top Picks" or "Daily Specials".',
         'Consider: complementary flavors, popular combos, time of day, and variety.',
         '',
         'Respond in this EXACT JSON format and nothing else:',
@@ -365,7 +392,7 @@ const getRecommendations = asyncHandler(async (req, res, next) => {
         '  "recommendations": [',
         '    { "id": "<item_id>", "reason": "<short 8-12 word reason>" }',
         '  ],',
-        '  "reasoning": "<one friendly sentence explaining the overall suggestion, mention time of day>"',
+        '  "reasoning": "<one friendly sentence explaining the overall suggestion, MUST mention current day of week (' + dayName + '), time of day (' + timeSlot + '), and the ' + season + ' season>"',
         '}',
         '```'
     ].filter(Boolean).join('\n');
@@ -395,7 +422,8 @@ const getRecommendations = asyncHandler(async (req, res, next) => {
                             stallId: match.stallId || stallId,
                             stallName: match.stallName || null,
                             sameStall: String(match.stallId) === String(stallId),
-                            reason: rec.reason || ''
+                            reason: rec.reason || '',
+                            season: match.season || 'All'
                         });
                     }
                 }

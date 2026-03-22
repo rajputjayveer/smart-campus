@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Package, RefreshCw, CheckCircle, Clock, Utensils, Plus, Trash2, Pencil, Save, X, XCircle, TicketPercent, ChevronDown } from 'lucide-react';
+import { Package, RefreshCw, CheckCircle, Clock, Utensils, Plus, Trash2, Pencil, Save, X, XCircle, TicketPercent, ChevronDown, Lock, ShieldCheck } from 'lucide-react';
 import api from '../services/api';
+import { useSocket } from '../context/SocketContext';
 import ShopkeeperCouponManagement from './ShopkeeperCouponManagement';
 
 const statusOptions = ['pending', 'preparing', 'ready', 'completed', 'cancelled'];
@@ -34,6 +35,11 @@ export default function ShopkeeperPanel({ user, showToast }) {
     const [editingPriceId, setEditingPriceId] = useState(null);
     const [editedPrice, setEditedPrice] = useState('');
     const [formData, setFormData] = useState({ name: '', price: '', description: '', image: '' });
+    const [otpModalOrder, setOtpModalOrder] = useState(null);
+    const [otpValue, setOtpValue] = useState('');
+    const [verifyingOtp, setVerifyingOtp] = useState(false);
+
+    const socket = useSocket();
 
     const stallId = user?.stallId;
 
@@ -53,11 +59,44 @@ export default function ShopkeeperPanel({ user, showToast }) {
 
     useEffect(() => { loadOrders(); loadMenu(); const i = setInterval(loadOrders, 30000); return () => clearInterval(i); }, [stallId]);
 
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNewOrder = (data) => {
+            console.log('🔥 Real-time order refresh:', data);
+            loadOrders();
+        };
+
+        socket.on('new_order', handleNewOrder);
+        return () => socket.off('new_order', handleNewOrder);
+    }, [socket]);
+
     const stallOrders = useMemo(() => Array.isArray(orders) ? orders : [], [orders]);
 
     const handleStatusChange = async (orderId, newStatus) => {
+        if (newStatus === 'completed') {
+            const order = orders.find(o => o.id === orderId);
+            setOtpModalOrder(order);
+            setOtpValue('');
+            return;
+        }
         try { await api.updateOrderStatus(orderId, newStatus); showToast?.success?.('Status updated'); loadOrders(); }
         catch { showToast?.error?.('Failed to update status'); }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!otpModalOrder || !otpValue) return;
+        try {
+            setVerifyingOtp(true);
+            await api.verifyOrderOtp(otpModalOrder.id, otpValue);
+            showToast?.success?.('OTP Verified! Order completed.');
+            setOtpModalOrder(null);
+            loadOrders();
+        } catch (err) {
+            showToast?.error?.(err.message || 'Invalid OTP');
+        } finally {
+            setVerifyingOtp(false);
+        }
     };
 
     const handleCreateMenuItem = async (e) => {
@@ -299,6 +338,53 @@ export default function ShopkeeperPanel({ user, showToast }) {
                 {/* COUPONS TAB */}
                 {activeTab === 'coupons' && <ShopkeeperCouponManagement showToast={showToast} />}
             </div>
+
+            {/* OTP Verification Modal */}
+            {otpModalOrder && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 fade-in">
+                    <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden slide-up">
+                        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-5 text-white text-center">
+                            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <ShieldCheck className="h-6 w-6 text-white" />
+                            </div>
+                            <h3 className="text-lg font-bold">Verify Pickup</h3>
+                            <p className="text-indigo-100 text-xs">Enter the 4-digit OTP shown on customer's screen</p>
+                        </div>
+                        
+                        <div className="p-6">
+                            <div className="mb-6">
+                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 text-center">Security Code</label>
+                                <input
+                                    type="text"
+                                    maxLength="4"
+                                    value={otpValue}
+                                    onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ''))}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleVerifyOtp()}
+                                    className="w-full text-center text-4xl font-black tracking-[0.5em] py-4 border-2 border-gray-100 rounded-2xl bg-gray-50 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                                    placeholder="----"
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setOtpModalOrder(null)}
+                                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleVerifyOtp}
+                                    disabled={otpValue.length !== 4 || verifyingOtp}
+                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold text-sm hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-200 disabled:opacity-50 transition-all active:scale-95"
+                                >
+                                    {verifyingOtp ? 'Verifying...' : 'Complete'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

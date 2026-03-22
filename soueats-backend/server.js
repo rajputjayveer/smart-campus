@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const http = require('http');
+const { Server } = require('socket.io');
 const { testConnection, closePool } = require('./config/database');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const logger = require('./middleware/logger');
@@ -22,7 +24,44 @@ const couponRoutes = require('./routes/couponRoutes');
 
 // Initialize app
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+  }
+});
+
 const PORT = process.env.PORT || 5000;
+
+// Attach io to app for use in controllers
+app.set('socketio', io);
+
+// ========== Socket.io Logic ==========
+io.on('connection', (socket) => {
+  console.log(`🔌 New client connected: ${socket.id}`);
+
+  // Join a specific user room
+  socket.on('join_user', (userId) => {
+    if (userId) {
+      socket.join(`user_${userId}`);
+      console.log(`👤 User ${userId} joined their notification room`);
+    }
+  });
+
+  // Join a specific stall room (for shopkeepers)
+  socket.on('join_stall', (stallId) => {
+    if (stallId) {
+      socket.join(`stall_${stallId}`);
+      console.log(`🏪 Stall ${stallId} shopkeeper joined their notification room`);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`🔌 Client disconnected: ${socket.id}`);
+  });
+});
 
 // ========== Middleware ==========
 // Disable ETag to prevent 304 responses for API data
@@ -46,12 +85,6 @@ app.use(sanitizeInput);
 
 // Logging
 app.use(logger);
-
-// Rate limiting - Only in production, or disabled for development
-// Uncomment the line below to enable rate limiting in production
-// if (process.env.NODE_ENV === 'production') {
-//     app.use('/api', apiRateLimiter);
-// }
 
 // ========== Routes ==========
 // Disable caching for all API responses (always fetch fresh data)
@@ -91,8 +124,6 @@ app.use(notFound);
 app.use(errorHandler);
 
 // ========== Server Initialization ==========
-let server;
-
 async function startServer() {
   try {
     // Test database connection
@@ -104,7 +135,7 @@ async function startServer() {
     }
 
     // Start server
-    server = app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log('');
       console.log('╔══════════════════════════════════════════╗');
       console.log('║      🍽️  SouEats API Server             ║');
@@ -150,4 +181,5 @@ async function gracefulShutdown() {
 // Start the server
 startServer();
 
-module.exports = app;
+module.exports = { app, server };
+

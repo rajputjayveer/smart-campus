@@ -314,10 +314,21 @@ export default function CanteenView({ user, showToast }) {
                 </div>
             </div>
 
-            {/* Menu Items */}
-            <div className={`order-1 lg:order-2 h-full overflow-y-auto no-scrollbar pb-24 lg:pb-0 relative px-1 transition-all duration-300 ${cart.length > 0 ? 'md:col-span-2 xl:col-span-3 lg:col-span-2' : 'md:col-span-2 xl:col-span-3 lg:col-span-3'}`}>
-                {selectedStall && (
-                    <>
+            {/* Main Content Area */}
+            <div className={`order-1 lg:order-2 h-full overflow-y-auto overflow-x-hidden no-scrollbar pb-24 lg:pb-0 relative px-1 transition-all duration-300 ${cart.length > 0 ? 'md:col-span-2 xl:col-span-3 lg:col-span-2' : 'md:col-span-2 xl:col-span-3 lg:col-span-3'}`}>
+                
+                {/* Daily Highlights - Top picks from all stalls (Always visible at the top) */}
+                <div className="mb-6 relative" style={{ zIndex: 1 }}>
+                    <RecommendationPanel 
+                        cart={[]} 
+                        stallId={null} 
+                        onAddToCart={addToCart} 
+                        showToast={showToast} 
+                    />
+                </div>
+
+                {selectedStall ? (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="mb-4 lg:mb-5 sticky top-0 bg-gradient-to-b from-slate-50 via-slate-50/95 to-transparent pt-2 pb-4 z-10 backdrop-blur-md">
                             <div className="flex items-end justify-between mb-3">
                                 <div>
@@ -332,17 +343,17 @@ export default function CanteenView({ user, showToast }) {
                             </div>
 
                             {availableOffers.length > 0 && (
-                                <div className="mb-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                                <div className="mb-3 flex gap-3 overflow-x-auto pb-1 no-scrollbar">
                                     {availableOffers.map((offer) => (
-                                        <div key={offer.id} className="shrink-0 rounded-xl border border-amber-200/60 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-2 min-w-[170px]">
-                                            <div className="flex items-center justify-between mb-0.5">
-                                                <p className="text-xs font-bold text-amber-800 tracking-wide">{offer.code}</p>
-                                                <TicketPercent className="h-3 w-3 text-amber-500" />
+                                        <div key={offer.id} className="shrink-0 rounded-xl border border-amber-200/70 border-l-4 border-l-amber-400 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 min-w-[200px] flex flex-col gap-1 shadow-sm">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-[11px] font-black text-amber-800 tracking-widest bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-md">{offer.code}</span>
+                                                <TicketPercent className="h-4 w-4 text-amber-500 flex-shrink-0" />
                                             </div>
-                                            <p className="text-sm font-extrabold text-amber-900">
+                                            <p className="text-base font-extrabold text-amber-900 leading-none">
                                                 {offer.discountType === 'percentage' ? `${offer.discountValue}% OFF` : `INR ${offer.discountValue} OFF`}
                                             </p>
-                                            <p className="text-[10px] text-amber-600 mt-0.5">Min: INR {Number(offer.minOrderAmount || 0).toFixed(0)}</p>
+                                            <p className="text-[11px] text-amber-600 font-medium">Min. order: INR {Number(offer.minOrderAmount || 0).toFixed(0)}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -373,34 +384,51 @@ export default function CanteenView({ user, showToast }) {
                             {filteredItems.map((item, index) => {
                                 const cartItem = cart.find(c => c.id === item.id);
                                 return (
-                                    <div key={item.id || `item-${index}`} className="bg-white rounded-2xl p-3 lg:p-4 border border-gray-100 card-hover group relative overflow-hidden">
-                                        {item.popular === 1 && (
-                                            <span className="absolute top-2 right-2 z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">Popular</span>
-                                        )}
+                                    <div key={item.id || `item-${index}`} className="bg-white rounded-2xl p-3 lg:p-4 border border-gray-100 hover:border-indigo-100 hover:shadow-md transition-all duration-200 group relative">
                                         {item.image ? (
                                             <div className="relative overflow-hidden rounded-xl mb-3">
                                                 <img src={item.image} alt={item.name || 'Menu item'} className="w-full h-28 lg:h-36 object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                {item.popular === 1 && (
+                                                    <span className="absolute top-2 right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">Popular</span>
+                                                )}
                                             </div>
                                         ) : (
-                                            <div className="w-full h-20 lg:h-24 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl mb-3 flex items-center justify-center">
+                                            <div className="w-full h-20 lg:h-24 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl mb-3 flex items-center justify-center relative">
                                                 <span className="text-3xl opacity-40">🍽️</span>
+                                                {item.popular === 1 && (
+                                                    <span className="absolute top-2 right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">Popular</span>
+                                                )}
                                             </div>
                                         )}
                                         <h3 className="font-bold text-sm lg:text-base text-gray-900 line-clamp-2 leading-snug">{item.name || 'Unnamed Item'}</h3>
                                         <p className="text-xs text-gray-400 mb-3 line-clamp-2 mt-0.5">{item.description || 'Delicious meal'}</p>
                                         <div className="flex items-center justify-between">
                                             <span className="text-base lg:text-lg font-extrabold text-indigo-600">INR {item.price || 0}</span>
-                                            <button
-                                                onClick={() => addToCart(item)}
-                                                className={`px-3 py-1.5 rounded-lg flex items-center text-sm font-semibold transition-all active:scale-95 ${
-                                                    cartItem
-                                                        ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                                                        : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200/50 hover:shadow-lg'
-                                                }`}
-                                            >
-                                                <Plus className="h-3.5 w-3.5 mr-1" />
-                                                {cartItem ? `Add (${cartItem.quantity})` : 'Add'}
-                                            </button>
+                                            {cartItem ? (
+                                                <div className="flex items-center gap-1.5">
+                                                    <button
+                                                        onClick={() => removeFromCart(item.id)}
+                                                        className="w-7 h-7 rounded-lg flex items-center justify-center bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-all active:scale-90 font-bold"
+                                                    >
+                                                        <Minus className="h-3.5 w-3.5" />
+                                                    </button>
+                                                    <span className="min-w-[22px] text-center text-sm font-bold text-indigo-700">{cartItem.quantity}</span>
+                                                    <button
+                                                        onClick={() => addToCart(item)}
+                                                        className="w-7 h-7 rounded-lg flex items-center justify-center bg-indigo-600 text-white hover:bg-indigo-700 transition-all active:scale-90 shadow-md shadow-indigo-200/50"
+                                                    >
+                                                        <Plus className="h-3.5 w-3.5" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => addToCart(item)}
+                                                    className="px-3 py-1.5 rounded-lg flex items-center text-sm font-semibold transition-all active:scale-95 bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200/50 hover:shadow-lg"
+                                                >
+                                                    <Plus className="h-3.5 w-3.5 mr-1" />
+                                                    Add
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 );
@@ -414,7 +442,13 @@ export default function CanteenView({ user, showToast }) {
                                 <p className="text-gray-300 text-sm mt-1">Try a different search term</p>
                             </div>
                         )}
-                    </>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-20 text-center bg-white/50 rounded-3xl border border-dashed border-gray-200">
+                        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4 text-2xl">🏪</div>
+                        <h3 className="text-lg font-bold text-gray-800">Ready to eat?</h3>
+                        <p className="text-gray-500 text-sm max-w-xs">Select a stall from the sidebar to view their full menu and start your order.</p>
+                    </div>
                 )}
             </div>
 

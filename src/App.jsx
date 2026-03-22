@@ -61,6 +61,9 @@ import { Toast, useToast } from './components/Toast';
 import api from './services/api';
 import { auth } from './utils/cookies';
 import { CartProvider } from './context/CartContext';
+import { SocketProvider } from './context/SocketContext';
+import { NotificationProvider } from './context/NotificationContext';
+import NotificationBell from './components/NotificationBell';
 
 const LoadingScreen = () => (
   <div className="min-h-screen bg-gradient-to-br from-violet-50 via-indigo-50 to-cyan-50 flex flex-col items-center justify-center relative overflow-hidden">
@@ -172,63 +175,69 @@ export default function App() {
   const initials = (user.name || 'U').split(' ').filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-indigo-50/30 to-cyan-50/40">
-      {/* Header */}
-      <header className="z-40 flex-shrink-0 border-b border-gray-200/60 glass shadow-sm">
-        <div className="h-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
-        <nav className="container mx-auto flex items-center justify-between px-4 py-2.5 sm:py-3">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-2 rounded-xl shadow-lg shadow-indigo-200/50">
-              <ChefHat className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent leading-none">
-                SouEats
-              </h1>
-              <p className="text-[10px] font-medium text-gray-400 tracking-wider uppercase hidden sm:block">Smart Campus Food Hub</p>
-            </div>
-          </div>
-
-          {/* User info + Logout */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 sm:gap-2.5 rounded-xl border border-gray-200/60 bg-white/60 px-2.5 sm:px-3 py-1.5 sm:py-2">
-              <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs sm:text-sm shadow-md">
-                {initials}
+    <SocketProvider user={user}>
+      <NotificationProvider>
+        <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-indigo-50/30 to-cyan-50/40">
+        {/* Header */}
+        <header className="z-40 flex-shrink-0 border-b border-gray-200/60 glass shadow-sm">
+          <div className="h-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+          <nav className="container mx-auto flex items-center justify-between px-4 py-2.5 sm:py-3">
+            {/* Logo */}
+            <div className="flex items-center gap-2.5">
+              <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-2 rounded-xl shadow-lg shadow-indigo-200/50">
+                <ChefHat className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
               </div>
-              <div className="hidden sm:block leading-tight">
-                <p className="text-sm font-semibold text-gray-800">{user.name}</p>
-                <p className="text-[11px] text-gray-400">{user.email || 'Campus account'}</p>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent leading-none">
+                  SouEats
+                </h1>
+                <p className="text-[10px] font-medium text-gray-400 tracking-wider uppercase hidden sm:block">Smart Campus Food Hub</p>
               </div>
-              <span className="rounded-full bg-gradient-to-r from-indigo-50 to-purple-50 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-indigo-600 uppercase tracking-wider border border-indigo-100">
-                {user.role}
-              </span>
             </div>
-            <button
-              onClick={handleLogout}
-              className="p-2 sm:px-3.5 sm:py-2 rounded-xl border border-red-200/60 bg-red-50/50 text-red-600 hover:bg-red-100 transition-all group"
-              title="Logout"
-            >
-              <LogOut className="h-4 w-4 group-hover:scale-110 transition-transform" />
-              <span className="hidden sm:inline ml-1.5 text-sm font-semibold">Logout</span>
-            </button>
-          </div>
-        </nav>
-      </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-4 sm:py-5 flex-1 overflow-hidden flex flex-col">
-        {user.role === 'customer' && (
-          <CartProvider>
-            <CustomerApp user={user} showToast={showToast} />
-            <ChatbotWidget onNavigateToCanteen={() => window.dispatchEvent(new Event('navigate_to_canteen'))} />
-          </CartProvider>
-        )}
-        {user.role === 'shopkeeper' && <ShopkeeperPanel user={user} showToast={showToast} />}
-        {user.role === 'admin' && <AdminView showToast={showToast} />}
-      </main>
+            {/* User info + Logout */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <NotificationBell />
+              
+              <div className="flex items-center gap-2 sm:gap-2.5 rounded-xl border border-gray-200/60 bg-white/60 px-2.5 sm:px-3 py-1.5 sm:py-2">
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs sm:text-sm shadow-md">
+                  {initials}
+                </div>
+                <div className="hidden sm:block leading-tight">
+                  <p className="text-sm font-semibold text-gray-800">{user.name}</p>
+                  <p className="text-[11px] text-gray-400">{user.email || 'Campus account'}</p>
+                </div>
+                <span className="rounded-full bg-gradient-to-r from-indigo-50 to-purple-50 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-indigo-600 uppercase tracking-wider border border-indigo-100">
+                  {user.role}
+                </span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 sm:px-3.5 sm:py-2 rounded-xl border border-red-200/60 bg-red-50/50 text-red-600 hover:bg-red-100 transition-all group"
+                title="Logout"
+              >
+                <LogOut className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline ml-1.5 text-sm font-semibold">Logout</span>
+              </button>
+            </div>
+          </nav>
+        </header>
 
-      {toastOverlay}
-    </div>
+        {/* Main Content */}
+        <main className="container mx-auto px-4 py-4 sm:py-5 flex-1 overflow-hidden flex flex-col">
+          {user.role === 'customer' && (
+            <CartProvider>
+              <CustomerApp user={user} showToast={showToast} />
+              <ChatbotWidget onNavigateToCanteen={() => window.dispatchEvent(new Event('navigate_to_canteen'))} />
+            </CartProvider>
+          )}
+          {user.role === 'shopkeeper' && <ShopkeeperPanel user={user} showToast={showToast} />}
+          {user.role === 'admin' && <AdminView showToast={showToast} />}
+        </main>
+
+        {toastOverlay}
+      </div>
+      </NotificationProvider>
+    </SocketProvider>
   );
 }

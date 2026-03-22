@@ -139,6 +139,13 @@ class ApiService {
         });
     }
 
+    async verifyOrderOtp(orderId, otp) {
+        return this.request(`/orders/${orderId}/verify-otp`, {
+            method: 'POST',
+            body: JSON.stringify({ otp }),
+        });
+    }
+
     async getUserOrders() {
         // Get orders for the currently logged-in user
         // Try with auth token first, then fallback to userId in query

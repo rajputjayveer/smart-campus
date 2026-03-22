@@ -15,3 +15,7 @@ Forecast popular items to help stall owners prep (e.g., "Expect 50% more burgers
 
 Implementation: Backend cron job queries orders and feedbacks tables, uses simple ML (e.g., Prophet.js or TensorFlow.js) to predict trends. Expose via /api/forecast and show in ShopPanel dashboard. Store predictions in a new MySQL table.
 Essential for optimizing stock in food delivery.
+
+
+
+Campus Favorites • Today's Discovery  enahce ui for this also if possible then make it as first tab and menu in diff tab but defalut menu shouldbe recommndation 

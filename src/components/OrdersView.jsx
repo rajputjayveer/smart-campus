@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Package, Clock, CheckCircle, XCircle, RefreshCw, CreditCard, Star, ChevronDown, ChevronUp, MessageSquare, X } from 'lucide-react';
+import { Package, Clock, CheckCircle, XCircle, RefreshCw, CreditCard, Star, ChevronDown, ChevronUp, MessageSquare, X, Key } from 'lucide-react';
 import api from '../services/api';
+import { useSocket } from '../context/SocketContext';
 
 const STATUS_CONFIG = {
     pending:   { color: 'bg-amber-100 text-amber-700 border-amber-200', dot: 'bg-amber-500', barColor: 'from-amber-400 to-amber-500' },
@@ -20,6 +21,7 @@ function OrdersViewComponent({ user, showToast }) {
     const [feedbackData, setFeedbackData] = useState({ itemName: '', rating: 5, comments: '' });
     const [submittingFeedback, setSubmittingFeedback] = useState(false);
     const [hoveredStar, setHoveredStar] = useState(0);
+    const socket = useSocket();
 
     const safeToast = {
         error: (msg) => showToast?.error?.(msg),
@@ -32,6 +34,18 @@ function OrdersViewComponent({ user, showToast }) {
         const interval = setInterval(loadOrders, 30000);
         return () => clearInterval(interval);
     }, [user]);
+
+    useEffect(() => {
+        if (!socket) return;
+        
+        const handleOrderUpdate = (data) => {
+            console.log('📦 Real-time order refresh:', data);
+            loadOrders();
+        };
+
+        socket.on('order_status_update', handleOrderUpdate);
+        return () => socket.off('order_status_update', handleOrderUpdate);
+    }, [socket]);
 
     const loadOrders = async () => {
         try {
@@ -206,6 +220,24 @@ function OrdersViewComponent({ user, showToast }) {
                                         <div className="flex justify-between text-[10px] text-gray-400 px-1">
                                             {TIMELINE_STEPS.map(s => <span key={s} className="capitalize">{s}</span>)}
                                         </div>
+
+                                        {/* OTP for Pickup */}
+                                        {['ready', 'preparing', 'pending'].includes(status) && order.pickupOtp && (
+                                            <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-3 flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600">
+                                                        <Key className="h-4 w-4" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] uppercase tracking-wider font-bold text-indigo-400 leading-none">Pickup OTP</p>
+                                                        <p className="text-sm font-bold text-indigo-700">Show this to the shopkeeper</p>
+                                                    </div>
+                                                </div>
+                                                <div className="bg-white px-4 py-1.5 rounded-lg border-2 border-dashed border-indigo-200 shadow-sm">
+                                                    <span className="text-xl font-black text-indigo-600 tracking-widest">{order.pickupOtp}</span>
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {/* Actions */}
                                         <div className="flex justify-end pt-2">
